@@ -5,11 +5,23 @@
 typedef struct ALCdevice_struct ALCdevice;
 typedef struct ALCcontext_struct ALCcontext;
 typedef unsigned int ALuint;
-typedef int ALint;
 typedef int ALCint;
 
 #define FREQ 22050   // Sample rate
 #define CAP_SIZE 16384 // How much to capture at a time (affects latency)
+
+class SampleBuffer
+{
+public:
+	void AddSample(double const sample);
+	void Reset() { m_CapturedSamples = 0; }
+
+	short const* GetData() const { return m_SampleBuffer; }
+	uint32 GetNumCapturedSamples() const { return m_CapturedSamples; }
+private:
+	short m_SampleBuffer[FREQ * 2]; // A buffer to hold captured audio
+	uint32 m_CapturedSamples = 0;  // How many samples are captured
+};
 
 //---------------------------------
 // Framework
@@ -41,8 +53,9 @@ private:
 	std::list<ALuint> m_Buffers;
 	ALuint m_Source;
 
-	short m_Buffer[FREQ * 2]; // A buffer to hold captured audio
-	ALCint m_CapturedSamples = 0;  // How many samples are captured
+	SampleBuffer m_Buffer = SampleBuffer();
+
+	double m_CurrentPhase = 0;
 
 	ALuint m_BufferHolder[16]; // An array to hold catch the unqueued buffers
 };

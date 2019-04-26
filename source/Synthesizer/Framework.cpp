@@ -94,7 +94,8 @@ void Framework::InitializeAudio()
 	error = alGetError();
 
 	// Queue our buffers onto list
-	for (int ii = 0; ii < 16; ++ii) {
+	for (int ii = 0; ii < 16; ++ii) 
+	{
 		m_Buffers.push_back(buffers[ii]);
 	}
 
@@ -153,6 +154,15 @@ void Framework::Loop()
 	}
 }
 
+double GetSampleAmplitude(double const amplitude, double const frequency, double const time, double const phase)
+{
+	return std::sin(etm::PI2 * frequency * (phase + time)) * amplitude;
+}
+double GetPhase(double const time, double const frequency)
+{
+	return std::fmod(time, frequency);
+}
+
 //---------------------------------
 // Framework::Update
 //
@@ -161,35 +171,42 @@ void Framework::Loop()
 void Framework::Update()
 {
 	ALint availableBuffers = 0; // Buffers to be recovered
-	// Poll for recoverable buffers
 	alGetSourcei(m_Source, AL_BUFFERS_PROCESSED, &availableBuffers);
-	if (availableBuffers > 0) {
+
+	if (availableBuffers > 0) 
+	{
 		alSourceUnqueueBuffers(m_Source, availableBuffers, m_BufferHolder);
-		for (int ii = 0; ii < availableBuffers; ++ii) {
+
+		for (int i = 0; i < availableBuffers; ++i) 
+		{
 			// Push the recovered buffers back on the queue
-			m_Buffers.push_back(m_BufferHolder[ii]);
+			m_Buffers.push_back(m_BufferHolder[i]);
 		}
 	}
 
 	// Synthesize wave samples
 	static double const s_amplitude = 0.5;
-	static double const s_frequency = 440000.0;//hz
+	static double const s_frequency = 44000.0;//hz
 
-	double const currentSample = std::sin(static_cast<double>(TIME->GetTime())*s_frequency)*s_amplitude;
+	double const time = static_cast<double>(TIME->GetTime());
 
-	// Insert sample into buffer
-	static double const s_maxShort = static_cast<double>(std::numeric_limits<short>::max());
-	m_Buffer[m_CapturedSamples] = static_cast<short>(currentSample * s_maxShort);
-	m_CapturedSamples++;
+	double const currentSample = GetSampleAmplitude(s_amplitude, s_frequency, time, 0.0);
+
+	m_Buffer.AddSample(currentSample);
 
 	// Upload to soundcard
-	if (m_CapturedSamples > CAP_SIZE) {
-		m_CapturedSamples = 0;
+	if (m_Buffer.GetNumCapturedSamples() > CAP_SIZE) 
+	{
+		m_Buffer.Reset();
 
 		// Stuff the captured data in a buffer-object
-		if (!m_Buffers.empty()) { // We just drop the data if no buffers are available
-			ALuint currentBuffer = m_Buffers.front(); m_Buffers.pop_front();
-			alBufferData(currentBuffer, AL_FORMAT_MONO16, m_Buffer, CAP_SIZE * sizeof(short), FREQ);
+		if (!m_Buffers.empty()) // We just drop the data if no buffers are available
+		{ 
+			// Get front buffer
+			ALuint currentBuffer = m_Buffers.front(); 
+			m_Buffers.pop_front();
+
+			alBufferData(currentBuffer, AL_FORMAT_MONO16, m_Buffer.GetData(), CAP_SIZE * sizeof(short), FREQ);
 
 			// Queue the buffer
 			alSourceQueueBuffers(m_Source, 1, &currentBuffer);
@@ -199,7 +216,8 @@ void Framework::Update()
 			//  the source stops playing).
 			ALint soundState = 0;
 			alGetSourcei(m_Source, AL_SOURCE_STATE, &soundState);
-			if (soundState != AL_PLAYING) {
+			if (soundState != AL_PLAYING) 
+			{
 				alSourcePlay(m_Source);
 			}
 		}
@@ -232,4 +250,17 @@ bool TestALError(std::string error)
 		return true;
 	}
 	return false;
+}
+
+//---------------------------------
+// SampleBuffer::AddSample
+//
+// Insert sample into buffer
+//
+void SampleBuffer::AddSample(double const sample)
+{
+	static double const s_maxShort = static_cast<double>(std::numeric_limits<short>::max());
+
+	m_SampleBuffer[m_CapturedSamples] = static_cast<short>(sample * s_maxShort);
+	m_CapturedSamples++;
 }
