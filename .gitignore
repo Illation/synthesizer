@@ -1,0 +1,16 @@
+*.sdf
+/DemoVideo
+Synthesizer.VC.*
+Synthesizer.VC.VC.opendb
+Synthesizer.VC.db
+/build/Intermediate
+/bin
+/build/x32
+/build/x64
+*.ipch
+*.db
+build/.vs
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
