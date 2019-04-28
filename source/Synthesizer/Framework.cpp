@@ -133,10 +133,11 @@ bool Framework::InitializeAudio()
 		static float const s_maxInt16 = static_cast<float>(std::numeric_limits<int16>::max());
 		for (uint32 i = 0; i < framesPerBuffer; i++)
 		{
-			float left, right;
-			synth->GetSample(left, right);
-			*out++ = static_cast<int16>(left * s_maxInt16);
-			*out++ = static_cast<int16>(right * s_maxInt16);
+			std::vector<float> channels = synth->GetSample();
+			for (float const channel : channels)
+			{
+				*out++ = static_cast<int16>(channel * s_maxInt16);
+			}
 		}
 
 		return static_cast<int>(PaStreamCallbackResult::paContinue);
@@ -147,8 +148,8 @@ bool Framework::InitializeAudio()
 	err = Pa_OpenDefaultStream(&m_PaStream, 
 		0, // no input channels
 		output.Channels, 
-		paInt16, 
-		output.BitRate,
+		paInt16,
+		output.SampleRate,
 		output.FramesPerBuffer, 
 		onPortAudioCallback, 
 		m_Synthesizer.get());
@@ -165,6 +166,8 @@ bool Framework::InitializeAudio()
 		LogPortAudioError(err);
 		return false;
 	}
+
+	m_Synthesizer->Initialize();
 
 	// Succesfully initialized sound
 	return true;
@@ -238,5 +241,5 @@ void Framework::Loop()
 //
 void Framework::Update()
 {
-
+	m_Synthesizer->Update();
 }

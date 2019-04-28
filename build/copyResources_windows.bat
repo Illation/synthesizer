@@ -23,7 +23,7 @@ IF "%COPY_DLLS%" == "true" (
 	)
 )
 
-REM xcopy "%SOURCE_DIR%\Engine\Resources" "%OUT_DIR%\Resources" /s/i/y/d
-REM xcopy "%SOURCE_DIR%\Demo\Config" "%OUT_DIR%" /s/i/y/d
+REM xcopy "%SOURCE_DIR%\Synthesizer\Resources" "%OUT_DIR%\Resources" /s/i/y/d
+xcopy "%SOURCE_DIR%\Synthesizer\Config" "%OUT_DIR%" /s/i/y/d
 
 exit
