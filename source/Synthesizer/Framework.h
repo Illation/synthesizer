@@ -1,35 +1,12 @@
 #pragma once
 #include <list>
-#include <portaudio.h>
+#include <memory>
+
+#include "Synthesizer.h"
 
 // forward declarations
-
-#define SAMPLE_RATE 44100   // Sample rate
-
-// the number of sample frames that PortAudio will
-// request from the callback.Many apps
-// may want to use
-// paFramesPerBufferUnspecified, which
-// tells PortAudio to pick the best,
-// possibly changing, buffer size
-#define FRAMES_PER_BUFFER 256 
-
-#define TIME_PER_BUFFER (static_cast<double>(FRAMES_PER_BUFFER)/static_cast<double>(SAMPLE_RATE/2))
-
-//---------------------------------
-// Synthesizer
-//
-// Generates sounds
-//
-class Synthesizer
-{
-public:
-	void GetSample(float& left, float& right);
-
-private:
-	float left_phase;
-	float right_phase;
-};
+typedef void PaStream;
+typedef int PaError;
 
 //---------------------------------
 // Framework
@@ -39,13 +16,14 @@ private:
 class Framework final
 {
 public:
+	Framework();
 	~Framework();
 
 	void Run();
 
 private:
 	void InitializeUtilities();
-	void InitializeAudio();
+	bool InitializeAudio(); // returns false if something went wrong
 	void TerminateAudio();
 
 	void LogPortAudioError(PaError err);
@@ -57,6 +35,8 @@ private:
 	// Data
 	////////
 
-	Synthesizer m_Synthesizer;
-	PaStream *m_PaStream;
+	std::unique_ptr<Synthesizer> m_Synthesizer;
+
+	// Portaudio stream
+	PaStream *m_PaStream;	// Will become invalid after TerminateAudio is called
 };

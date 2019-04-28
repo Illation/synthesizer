@@ -1,35 +1,19 @@
 #include "stdafx.h"
 #include "Framework.h"
 
-#include "Helper/Commands.h"
+#include <portaudio.h>
 
+#include <Helper/Commands.h>
+#include "Config.h"
 
 //---------------------------------
-// Synthesizer::GetSample
+// Framework::Framework
 //
-// Generate a sample at a given time
+// Framework constructor
 //
-void Synthesizer::GetSample(float& left, float& right)
-{
-	left = left_phase;
-	right = right_phase;
-
-	// Generate simple sawtooth phaser that ranges between -1.0 and 1.0
-	left_phase += 0.01f;
-	
-	// When signal reaches top, drop back down
-	if (left_phase >= 1.0f)
-	{
-		left_phase -= 2.0f;
-	}
-
-	// higher pitch so we can distinguish left and right
-	right_phase += 0.03f;
-	if (right_phase >= 1.0f)
-	{
-		right_phase -= 2.0f;
-	}
-}
+Framework::Framework()
+	: m_Synthesizer(std::make_unique<Synthesizer>())
+{ }
 
 //---------------------------------
 // Framework::~Framework
@@ -56,9 +40,11 @@ void Framework::Run()
 	DebugCopyResourceFiles();
 #endif
 	InitializeUtilities();
-	InitializeAudio();
 
-	Loop();
+	if (InitializeAudio())
+	{
+		Loop();
+	}
 }
 
 //---------------------------------
@@ -68,6 +54,21 @@ void Framework::Run()
 //
 void Framework::InitializeUtilities()
 {
+	// Load Config data
+	Config::GetInstance()->Initialize();
+
+	// Log what we loaded
+	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	LOG("Output Settings: ");
+	LOG("\tSample Rate       > " + std::to_string(output.SampleRate));
+	LOG("\tChannels          > " + std::to_string(output.Channels));
+	LOG("\tFrames per buffer > " + std::to_string(output.FramesPerBuffer));
+	LOG("Derived Settings: ");
+	LOG("\tBit Rate          > " + std::to_string(output.BitRate));
+	LOG("\tTime per buffer   > " + std::to_string(output.TimePerBuffer));
+	LOG("\tTime per sample   > " + std::to_string(output.TimePerSample));
+	LOG("");
+
 	Time::GetInstance()->Start();
 	PerformanceInfo::GetInstance();
 }
@@ -75,26 +76,37 @@ void Framework::InitializeUtilities()
 //---------------------------------
 // Framework::InitializeAudio
 //
-// Initialize portaudio library
+// Initialize portaudio library, create a stream
 //
-void Framework::InitializeAudio()
+bool Framework::InitializeAudio()
 {
+	// Initialize portaudio
 	PaError err = Pa_Initialize();
 	if (err != paNoError)
 	{
 		LogPortAudioError(err);
+		return false;
 	}
 
+	// Get number of soundcards from portaudio, print any errors
 	LOG("PortAudio version: " + std::string(Pa_GetVersionText()));
+	LOG("");
 	int numDevices;
 	numDevices = Pa_GetDeviceCount();
+	if (numDevices == 0)
+	{
+		LOG("Framework::InitializeAudio > No soundcard found!", Warning);
+		return false;
+	}
 	if (numDevices < 0)
 	{
-		printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
-		LOG("ERROR: Pa_CountDevices returned 0x" + std::to_string(numDevices));
+		LOG("Framework::InitializeAudio > Pa_CountDevices returned 0x" + std::to_string(numDevices), Warning);
 		err = numDevices;
 		LogPortAudioError(err);
+		return false;
 	}
+
+	// Enumerate Soundcards and log them
 	LOG("Sound devices detected by port audio:");
 	for (int32 i = 0; i < numDevices; i++)
 	{
@@ -103,41 +115,59 @@ void Framework::InitializeAudio()
 		LOG("\t" + std::string(deviceInfo->name) + std::string(" - hostApi: ") + std::string(hostApi->name));
 	}
 
-	// Open an audio I/O stream. 2nd param is input channel num, 3rd is output channels, i.e stereo
-	err = Pa_OpenDefaultStream(&m_PaStream, 0, 2, paFloat32, SAMPLE_RATE, FRAMES_PER_BUFFER, 
-		[](const void *inputBuffer, void *outputBuffer,
-			unsigned long framesPerBuffer,
-			const PaStreamCallbackTimeInfo* timeInfo,
-			PaStreamCallbackFlags statusFlags,
-			void *userData)
+	// The callback function called when our stream requests more data
+	auto onPortAudioCallback = [](
+		const void *inputBuffer, void *outputBuffer,
+		unsigned long framesPerBuffer,
+		const PaStreamCallbackTimeInfo* timeInfo,
+		PaStreamCallbackFlags statusFlags,
+		void *userData)
+	{
+		UNUSED(inputBuffer);
+		UNUSED(statusFlags);
+		UNUSED(timeInfo);
+
+		int16* out = static_cast<int16*>(outputBuffer);
+		Synthesizer* synth = static_cast<Synthesizer*>(userData);
+
+		static float const s_maxInt16 = static_cast<float>(std::numeric_limits<int16>::max());
+		for (uint32 i = 0; i < framesPerBuffer; i++)
 		{
-			UNUSED(inputBuffer);
-
-			Synthesizer* synth = static_cast<Synthesizer*>(userData);
-			float *out = (float*)outputBuffer;
-
-			for (uint32 i = 0; i < framesPerBuffer; i++)
-			{
-				float left, right;
-				synth->GetSample(left, right);
-				*out++ = left;
-				*out++ = right;
-			}
-
-			return 0;
+			float left, right;
+			synth->GetSample(left, right);
+			*out++ = static_cast<int16>(left * s_maxInt16);
+			*out++ = static_cast<int16>(right * s_maxInt16);
 		}
-		, &m_Synthesizer);
 
+		return static_cast<int>(PaStreamCallbackResult::paContinue);
+	};
+
+	// Open an audio I/O stream. 2nd param is input channel num, 3rd is output channels, i.e stereo
+	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	err = Pa_OpenDefaultStream(&m_PaStream, 
+		0, // no input channels
+		output.Channels, 
+		paInt16, 
+		output.BitRate,
+		output.FramesPerBuffer, 
+		onPortAudioCallback, 
+		m_Synthesizer.get());
 	if (err != paNoError)
 	{
 		LogPortAudioError(err);
+		return false;
 	}
 
+	// Start playing right away
 	err = Pa_StartStream(m_PaStream);
 	if (err != paNoError)
 	{
 		LogPortAudioError(err);
+		return false;
 	}
+
+	// Succesfully initialized sound
+	return true;
 }
 
 //---------------------------------
@@ -173,7 +203,7 @@ void Framework::TerminateAudio()
 //
 void Framework::LogPortAudioError(PaError err)
 {
-	LOG("PortAudio error: " + std::string(Pa_GetErrorText(err)));
+	LOG("Framework::LogPortAudioError > " + std::string(Pa_GetErrorText(err)), Warning);
 }
 
 
@@ -199,34 +229,6 @@ void Framework::Loop()
 
 		// Swap buffers
 	}
-}
-
-//---------------------------------
-// GetSampleAmplitude
-//
-// What do we want to do every cycle?
-//
-double GetSampleAmplitude(double const amplitude, double const frequency, double const time, double const phase)
-{
-	return std::sin(phase + (etm::PI2 * frequency * time)) * amplitude;
-}
-
-//---------------------------------
-// GetPhase
-//
-// Time within one cycle
-//
-double GetPhase(double const time, double const frequency)
-{
-	double tf = time * frequency;
-	return tf - std::floor(tf);
-}
-
-double GetFrequency(float const time)
-{
-	UNUSED(time);
-	return 440.0;
-	//return static_cast<double>(20150.f-sqrtf((sinf(time) * 10050.f) + 10100.f)*(20100.f/sqrtf(20100.f))); //oscillates between 50 and 20150 hz
 }
 
 //---------------------------------
