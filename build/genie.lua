@@ -44,25 +44,7 @@ function platformLibraries()
 		local depPf = path.join(DEP_DIR, p[j] .. "/") 
 
 		configuration { "vs*", p[j] }
-			libdirs { path.join(depPf, "openAL") }
-	end
-	configuration {}
-end
-function staticPlatformLibraries()--libraries built specifically for debug or release
-	local cfgs = configurations()
-	local p = platforms()
-	for i = 1, #cfgs do
-		for j = 1, #p do
-			local depPf = path.join(DEP_DIR, p[j] .. "/") 
-			local suffix = ""
-			if(string.startswith(cfgs[i], "Debug"))
-				then suffix = "/Debug"
-				else suffix = "/Release"
-			end
-
-			configuration { "vs*", p[j], cfgs[i] }
-				libdirs { }
-		end
+			libdirs { path.join(depPf, "portaudio") }
 	end
 	configuration {}
 end
@@ -93,7 +75,7 @@ configuration "vs*"
 	linkoptions { "/ignore:4221" }
 	defines { "PLATFORM_Win" }
 	includedirs { 
-		path.join(DEP_INCLUDE, "openAL")
+		path.join(DEP_INCLUDE, "portaudio")
 	}
 	debugdir "$(OutDir)"
 configuration { "vs*", "x32" }
@@ -141,11 +123,10 @@ project "Synthesizer"
 		flags { "Winmain"}
 
 	platformLibraries()
-	staticPlatformLibraries()
 	windowsPlatformPostBuild()
 
 	--Linked libraries
-    links{ "openAL" }
+    links{ "portaudio" }
 
 	--additional includedirs
 	local ProjBase = path.join(SOURCE_DIR, "Synthesizer") 

@@ -1,10 +1,35 @@
 #include "stdafx.h"
 #include "Framework.h"
 
-#include <AL/al.h>
-#include <AL/alc.h>
-
 #include "Helper/Commands.h"
+
+
+//---------------------------------
+// Synthesizer::GetSample
+//
+// Generate a sample at a given time
+//
+void Synthesizer::GetSample(float& left, float& right)
+{
+	left = left_phase;
+	right = right_phase;
+
+	// Generate simple sawtooth phaser that ranges between -1.0 and 1.0
+	left_phase += 0.01f;
+	
+	// When signal reaches top, drop back down
+	if (left_phase >= 1.0f)
+	{
+		left_phase -= 2.0f;
+	}
+
+	// higher pitch so we can distinguish left and right
+	right_phase += 0.03f;
+	if (right_phase >= 1.0f)
+	{
+		right_phase -= 2.0f;
+	}
+}
 
 //---------------------------------
 // Framework::~Framework
@@ -50,85 +75,107 @@ void Framework::InitializeUtilities()
 //---------------------------------
 // Framework::InitializeAudio
 //
-// Initialize OpenAL library
+// Initialize portaudio library
 //
 void Framework::InitializeAudio()
 {
-	m_Device = alcOpenDevice(NULL);
-	if (!m_Device)
+	PaError err = Pa_Initialize();
+	if (err != paNoError)
 	{
-		LOG("Unable to create openAL device", Error);
-		return;
-	}
-	ALboolean enumeration = alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT");
-	if (enumeration == AL_FALSE)
-	{
-		LOG("OpenAL enumeration not supported", Warning);
+		LogPortAudioError(err);
 	}
 
-	ListAudioDevices(alcGetString(NULL, ALC_DEVICE_SPECIFIER));
-
-	const ALCchar *defaultDeviceName = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
-
-	m_Device = alcOpenDevice(defaultDeviceName);
-	if (!m_Device)
+	LOG("PortAudio version: " + std::string(Pa_GetVersionText()));
+	int numDevices;
+	numDevices = Pa_GetDeviceCount();
+	if (numDevices < 0)
 	{
-		LOG("Unable to open default openAL device", Error);
-		return;
+		printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+		LOG("ERROR: Pa_CountDevices returned 0x" + std::to_string(numDevices));
+		err = numDevices;
+		LogPortAudioError(err);
 	}
-	ALCenum error;
-
-	LOG(std::string("Chosen device: ") + alcGetString(m_Device, ALC_DEVICE_SPECIFIER));
-	alGetError();
-
-	m_Context = alcCreateContext(m_Device, NULL);
-	if (!alcMakeContextCurrent(m_Context))
+	LOG("Sound devices detected by port audio:");
+	for (int32 i = 0; i < numDevices; i++)
 	{
-		LOG("OpenAL failed to make default context", Error);
-		return;
-	}
-	error = alGetError();
-
-	ALuint buffers[16];
-	alGenBuffers(16, &buffers[0]);
-	error = alGetError();
-
-	// Queue our buffers onto list
-	for (int ii = 0; ii < 16; ++ii) 
-	{
-		m_Buffers.push_back(buffers[ii]);
+		PaDeviceInfo const* deviceInfo = Pa_GetDeviceInfo(i);
+		PaHostApiInfo const* hostApi = Pa_GetHostApiInfo(deviceInfo->hostApi);
+		LOG("\t" + std::string(deviceInfo->name) + std::string(" - hostApi: ") + std::string(hostApi->name));
 	}
 
-	alGenSources(1, &m_Source); // Create a sound source
-	error = alGetError();
+	// Open an audio I/O stream. 2nd param is input channel num, 3rd is output channels, i.e stereo
+	err = Pa_OpenDefaultStream(&m_PaStream, 0, 2, paFloat32, SAMPLE_RATE, FRAMES_PER_BUFFER, 
+		[](const void *inputBuffer, void *outputBuffer,
+			unsigned long framesPerBuffer,
+			const PaStreamCallbackTimeInfo* timeInfo,
+			PaStreamCallbackFlags statusFlags,
+			void *userData)
+		{
+			UNUSED(inputBuffer);
 
-	if (error != AL_NO_ERROR)
+			Synthesizer* synth = static_cast<Synthesizer*>(userData);
+			float *out = (float*)outputBuffer;
+
+			for (uint32 i = 0; i < framesPerBuffer; i++)
+			{
+				float left, right;
+				synth->GetSample(left, right);
+				*out++ = left;
+				*out++ = right;
+			}
+
+			return 0;
+		}
+		, &m_Synthesizer);
+
+	if (err != paNoError)
 	{
-		LOG("OpenAL failed to initialize", Error);
-		return;
+		LogPortAudioError(err);
 	}
-	LOG("OpenAL loaded\n");
+
+	err = Pa_StartStream(m_PaStream);
+	if (err != paNoError)
+	{
+		LogPortAudioError(err);
+	}
 }
 
 //---------------------------------
-// Framework::ListAudioDevices
+// Framework::TerminateAudio
 //
-// List all soundcards
+// Destroy audio stuff
 //
-void Framework::ListAudioDevices(char const* devices)
+void Framework::TerminateAudio()
 {
-	ALCchar const *device = devices, *next = devices + 1;
-	size_t len = 0;
-
-	LOG("OpenAL device list:");
-	while (device && *device != '\0' && next && *next != '\0')
+	PaError err = Pa_StopStream(m_PaStream);
+	if (err != paNoError)
 	{
-		LOG(std::string("\t") + device);
-		len = strlen(device);
-		device += (len + 1);
-		next += (len + 2);
+		LogPortAudioError(err);
+	}
+
+	err = Pa_CloseStream(m_PaStream);
+	if (err != paNoError)
+	{
+		LogPortAudioError(err);
+	}
+
+	err = Pa_Terminate();
+	if (err != paNoError)
+	{
+		LogPortAudioError(err);
 	}
 }
+
+//---------------------------------
+// Framework::LogPortAudioError
+//
+// Print port audio error to log
+//
+void Framework::LogPortAudioError(PaError err)
+{
+	LOG("PortAudio error: " + std::string(Pa_GetErrorText(err)));
+}
+
 
 //---------------------------------
 // Framework::Loop
@@ -154,13 +201,32 @@ void Framework::Loop()
 	}
 }
 
+//---------------------------------
+// GetSampleAmplitude
+//
+// What do we want to do every cycle?
+//
 double GetSampleAmplitude(double const amplitude, double const frequency, double const time, double const phase)
 {
-	return std::sin(etm::PI2 * frequency * (phase + time)) * amplitude;
+	return std::sin(phase + (etm::PI2 * frequency * time)) * amplitude;
 }
+
+//---------------------------------
+// GetPhase
+//
+// Time within one cycle
+//
 double GetPhase(double const time, double const frequency)
 {
-	return std::fmod(time, frequency);
+	double tf = time * frequency;
+	return tf - std::floor(tf);
+}
+
+double GetFrequency(float const time)
+{
+	UNUSED(time);
+	return 440.0;
+	//return static_cast<double>(20150.f-sqrtf((sinf(time) * 10050.f) + 10100.f)*(20100.f/sqrtf(20100.f))); //oscillates between 50 and 20150 hz
 }
 
 //---------------------------------
@@ -170,97 +236,5 @@ double GetPhase(double const time, double const frequency)
 //
 void Framework::Update()
 {
-	ALint availableBuffers = 0; // Buffers to be recovered
-	alGetSourcei(m_Source, AL_BUFFERS_PROCESSED, &availableBuffers);
 
-	if (availableBuffers > 0) 
-	{
-		alSourceUnqueueBuffers(m_Source, availableBuffers, m_BufferHolder);
-
-		for (int i = 0; i < availableBuffers; ++i) 
-		{
-			// Push the recovered buffers back on the queue
-			m_Buffers.push_back(m_BufferHolder[i]);
-		}
-	}
-
-	// Synthesize wave samples
-	static double const s_amplitude = 0.5;
-	static double const s_frequency = 44000.0;//hz
-
-	double const time = static_cast<double>(TIME->GetTime());
-
-	double const currentSample = GetSampleAmplitude(s_amplitude, s_frequency, time, 0.0);
-
-	m_Buffer.AddSample(currentSample);
-
-	// Upload to soundcard
-	if (m_Buffer.GetNumCapturedSamples() > CAP_SIZE) 
-	{
-		m_Buffer.Reset();
-
-		// Stuff the captured data in a buffer-object
-		if (!m_Buffers.empty()) // We just drop the data if no buffers are available
-		{ 
-			// Get front buffer
-			ALuint currentBuffer = m_Buffers.front(); 
-			m_Buffers.pop_front();
-
-			alBufferData(currentBuffer, AL_FORMAT_MONO16, m_Buffer.GetData(), CAP_SIZE * sizeof(short), FREQ);
-
-			// Queue the buffer
-			alSourceQueueBuffers(m_Source, 1, &currentBuffer);
-
-			// Restart the source if needed
-			// (if we take too long and the queue dries up,
-			//  the source stops playing).
-			ALint soundState = 0;
-			alGetSourcei(m_Source, AL_SOURCE_STATE, &soundState);
-			if (soundState != AL_PLAYING) 
-			{
-				alSourcePlay(m_Source);
-			}
-		}
-	}
-}
-
-//---------------------------------
-// TestALError
-//
-// OpenAL error checking and output to log
-//
-bool TestALError(std::string error)
-{
-	ALCenum alerr = alGetError();
-	if (alerr != AL_NO_ERROR)
-	{
-		std::string alErrorString;
-		switch (alerr)
-		{
-		case AL_NO_ERROR: alErrorString = "AL_NO_ERROR"; break;
-		case AL_INVALID_NAME: alErrorString = "AL_INVALID_NAME"; break;
-		case AL_INVALID_ENUM: alErrorString = "AL_INVALID_ENUM"; break;
-		case AL_INVALID_VALUE: alErrorString = "AL_INVALID_VALUE"; break;
-		case AL_INVALID_OPERATION: alErrorString = "AL_INVALID_OPERATION"; break;
-		case AL_OUT_OF_MEMORY: alErrorString = "AL_OUT_OF_MEMORY"; break;
-		default:
-			alErrorString = "Unknown error code"; break;
-		}
-		LOG(error + " : " + alErrorString, Error);
-		return true;
-	}
-	return false;
-}
-
-//---------------------------------
-// SampleBuffer::AddSample
-//
-// Insert sample into buffer
-//
-void SampleBuffer::AddSample(double const sample)
-{
-	static double const s_maxShort = static_cast<double>(std::numeric_limits<short>::max());
-
-	m_SampleBuffer[m_CapturedSamples] = static_cast<short>(sample * s_maxShort);
-	m_CapturedSamples++;
 }
