@@ -28,8 +28,9 @@ REM xcopy "%SOURCE_DIR%\Synthesizer\Resources" "%OUT_DIR%\Resources" /s/i/y/d
 xcopy "%SOURCE_DIR%\Synthesizer\Config" "%OUT_DIR%" /s/i/y/d
 
 rem copy gtk resources
-xcopy "%SOURCE_DIR%\Synthesizer\Resources\gtk-3.20" "%OUT_DIR%\share\themes\Windows10\gtk-3.0" /s/i/y/d
+xcopy "%SOURCE_DIR%\Synthesizer\Resources\gtk-3.20" "%OUT_DIR%\share\themes\Windows10\gtk-3.20" /s/i/y/d
+xcopy "%SOURCE_DIR%\Synthesizer\Resources\gtk-3.0" "%OUT_DIR%\share\themes\Windows10\gtk-3.0" /s/i/y/d
 xcopy "%SOURCE_DIR%\Synthesizer\Resources\Adwaita" "%OUT_DIR%\share\icons\Adwaita" /s/i/y/d
-rem copy "%SOURCE_DIR%\Synthesizer\Resources\gschema.dtd" "%OUT_DIR%\share\glib-2.0\schemas\" /y /D
+xcopy "%SOURCE_DIR%\Synthesizer\Resources\gschema.dtd" "%OUT_DIR%\share\glib-2.0\schemas\" /y /D
 
 exit

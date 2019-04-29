@@ -3,7 +3,11 @@
 
 #include <portaudio.h>
 
+#include <gtk/gtk.h>
+
 #include <Helper/Commands.h>
+#include <Helper/InputManager.h>
+
 #include "Config.h"
 
 //---------------------------------
@@ -11,8 +15,9 @@
 //
 // Framework constructor
 //
-Framework::Framework()
-	: m_Synthesizer(std::make_unique<Synthesizer>())
+Framework::Framework(CommandlineArguments const& args)
+	: m_CmdArguments(args)
+	, m_Synthesizer(std::make_unique<Synthesizer>())
 { }
 
 //---------------------------------
@@ -24,6 +29,8 @@ Framework::~Framework()
 {
 	Time::GetInstance()->DestroyInstance();
 	PerformanceInfo::GetInstance()->DestroyInstance();
+	InputManager::GetInstance()->DestroyInstance();
+	Config::GetInstance()->DestroyInstance();
 
 	Logger::Release();
 }
@@ -43,6 +50,8 @@ void Framework::Run()
 
 	if (InitializeAudio())
 	{
+		InitializeGTK();
+
 		Loop();
 	}
 }
@@ -68,6 +77,8 @@ void Framework::InitializeUtilities()
 	LOG("\tTime per buffer   > " + std::to_string(output.TimePerBuffer));
 	LOG("\tTime per sample   > " + std::to_string(output.TimePerSample));
 	LOG("");
+
+	InputManager::GetInstance();
 
 	Time::GetInstance()->Start();
 	PerformanceInfo::GetInstance();
@@ -209,6 +220,57 @@ void Framework::LogPortAudioError(PaError err)
 	LOG("Framework::LogPortAudioError > " + std::string(Pa_GetErrorText(err)), Warning);
 }
 
+//---------------------------------
+// Framework::InitializeGTK
+//
+// Initialize GTK library, open a window
+//
+void Framework::InitializeGTK()
+{
+	// init library
+	gtk_init(&m_CmdArguments.argumentCount, &m_CmdArguments.argumentValues);
+
+	// create window
+	GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+	typedef void(*T_QuitLambdaType)(void);
+	auto quitCallback = []()
+	{
+		InputManager::GetInstance()->Quit();
+		gtk_main_quit();
+	};
+	g_signal_connect(window, "destroy", G_CALLBACK((T_QuitLambdaType)quitCallback), nullptr);
+
+	// listen for keyboard input
+	// on press
+	typedef gboolean(*T_KeyLambdaType)(GtkWidget*, GdkEventKey*, gpointer);
+
+	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+	auto keyPressedCallback = [](GtkWidget* widget, GdkEventKey* evnt, gpointer data) -> gboolean
+	{
+		UNUSED(data);
+		UNUSED(widget);
+
+		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
+		return FALSE;
+	};
+	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyPressedCallback), NULL);
+
+	// on release
+	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+	auto keyReleasedCallback = [](GtkWidget* widget, GdkEventKey* evnt, gpointer data) -> gboolean
+	{
+		UNUSED(data);
+		UNUSED(widget);
+
+		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
+		return FALSE;
+	};
+	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), NULL);
+
+	//show all the widgets
+	gtk_widget_show_all(window);
+}
 
 //---------------------------------
 // Framework::Loop
@@ -217,10 +279,8 @@ void Framework::LogPortAudioError(PaError err)
 //
 void Framework::Loop()
 {
-	while (true)
+	while (InputManager::GetInstance()->IsRunning())
 	{
-		// Update input events here
-
 		//******
 		//UPDATE
 		TIME->Update();
@@ -228,9 +288,13 @@ void Framework::Loop()
 
 		Update();
 
-		PERFORMANCE->Update();
+		// run gtk main loop
+		gtk_main_iteration_do(false);
 
-		// Swap buffers
+		// Update keystates
+		InputManager::GetInstance()->Update();
+
+		PERFORMANCE->Update();
 	}
 }
 

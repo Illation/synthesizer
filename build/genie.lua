@@ -31,7 +31,7 @@ function outputDirectories(_project)
 			configuration { cfgs[i], p[j] }
 				targetdir("../bin/" .. cfgs[i] .. "_" .. p[j] .. "/" .. _project)
 				--seems like the platform will automatically be added
-				objdir("../build/Intermediate/" .. cfgs[i]  .. "/" .. _project)		
+				objdir("../synthesizer/build/Intermediate/" .. cfgs[i]  .. "/" .. _project)		
 		end
 	end
 	configuration {}
