@@ -45,7 +45,7 @@ void Synthesizer::Initialize()
 {
 	m_OutputSettings = &(Config::GetInstance()->GetOutput());
 
-	float const freq = 880.f;
+	float const freq = 440.f;
 	float const amplitude = 0.5f;
 
 	m_Oscillators.emplace_back(amplitude, Oscillator(freq, new TrianglePattern()));

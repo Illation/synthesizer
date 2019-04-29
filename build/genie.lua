@@ -44,7 +44,7 @@ function platformLibraries()
 		local depPf = path.join(DEP_DIR, p[j] .. "/") 
 
 		configuration { "vs*", p[j] }
-			libdirs { path.join(depPf, "portaudio") }
+			libdirs { path.join(depPf, "portaudio"),path.join(depPf, "gtk") }
 	end
 	configuration {}
 end
@@ -75,7 +75,8 @@ configuration "vs*"
 	linkoptions { "/ignore:4221" }
 	defines { "PLATFORM_Win" }
 	includedirs { 
-		path.join(DEP_INCLUDE, "portaudio")
+		path.join(DEP_INCLUDE, "portaudio"),
+		path.join(DEP_INCLUDE, "gtk")
 	}
 	debugdir "$(OutDir)"
 configuration { "vs*", "x32" }
@@ -126,7 +127,43 @@ project "Synthesizer"
 	windowsPlatformPostBuild()
 
 	--Linked libraries
-    links{ "portaudio" }
+    links{ "portaudio"
+	-- everything from here is gtk dependancies
+		, "atk-1.0" 
+		, "bz2" 
+		, "cairo" 
+		, "cairo-gobject" 
+		, "epoxy" 
+		, "expat" 
+		, "fontconfig" 
+		, "freetype" 
+		, "gailutil-3.0" 
+		, "gdk_pixbuf-2.0" 
+		, "gdk-3.0" 
+		, "gio-2.0" 
+		, "glib-2.0" 
+		, "gmodule-2.0" 
+		, "gobject-2.0" 
+		, "gthread-2.0" 
+		, "gtk-3.0" 
+		, "harfbuzz" 
+		, "libcharset" 
+		, "libffi" 
+		, "libiconv" 
+		, "libintl" 
+		, "libpng16" 
+		, "pango-1.0" 
+		, "pangocairo-1.0" 
+		, "pangoft2-1.0" 
+		, "pangowin32-1.0" 
+		, "pcre" 
+		, "pcre16" 
+		, "pcre32" 
+		, "pcrecpp" 
+		, "pcreposix" 
+		, "pixman-1" 
+		, "zlib" 
+	}
 
 	--additional includedirs
 	local ProjBase = path.join(SOURCE_DIR, "Synthesizer") 
