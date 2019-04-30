@@ -14,9 +14,9 @@ class Oscillator
 public:
 	Oscillator(float const frequency, I_WavePattern* pattern);
 
-	float GetSample(double const dt);
+	void SetFrequency(float const val) { m_Frequency = static_cast<double>(val); }
 
-	static uint32 s_Oscillations;
+	float GetSample(double const dt);
 
 private:
 	float m_Phase = 0.0;
@@ -44,5 +44,5 @@ private:
 
 	Config::OutputSettings const* m_OutputSettings;
 
-	float m_OscillationMeasureTimer = 0.f;
+	float m_Frequency = 440.f;
 };

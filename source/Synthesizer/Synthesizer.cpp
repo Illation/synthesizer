@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Synthesizer.h"
 #include <Helper/Time.h>
-
-uint32 Oscillator::s_Oscillations(0);
+#include <Helper/InputManager.h>
+#include "gdk/gdkkeysyms-compat.h"
 
 //---------------------------------
 // Oscillator::Oscillator
@@ -28,7 +28,6 @@ float Oscillator::GetSample(double const dt)
 	if (m_Phase > 1.0)
 	{
 		m_Phase -= 1.0;
-		s_Oscillations++;
 	}
 	//m_Phase -= std::floor(m_Phase);
 
@@ -45,10 +44,9 @@ void Synthesizer::Initialize()
 {
 	m_OutputSettings = &(Config::GetInstance()->GetOutput());
 
-	float const freq = 440.f;
 	float const amplitude = 0.5f;
 
-	m_Oscillators.emplace_back(amplitude, Oscillator(freq, new TrianglePattern()));
+	m_Oscillators.emplace_back(amplitude, Oscillator(m_Frequency, new SquarePattern()));
 }
 
 //---------------------------------
@@ -58,13 +56,27 @@ void Synthesizer::Initialize()
 //
 void Synthesizer::Update()
 {
-	m_OscillationMeasureTimer += TIME->DeltaTime();
-	if (m_OscillationMeasureTimer >= 1.f)
-	{
-		m_OscillationMeasureTimer = 0.f;
+	float const c_KeyChangeSpeed = 10.f;
+	bool freqChanged = false;
 
-		//LOG("Oscillations: " + std::to_string(Oscillator::s_Oscillations));
-		Oscillator::s_Oscillations = 0;
+	if (InputManager::GetInstance()->GetKeyState(GDK_Down) >= E_KeyState::Down)
+	{
+		m_Frequency -= TIME->DeltaTime() * c_KeyChangeSpeed;
+		freqChanged = true;
+	}
+
+	if (InputManager::GetInstance()->GetKeyState(GDK_Up) >= E_KeyState::Down)
+	{
+		m_Frequency += TIME->DeltaTime() * c_KeyChangeSpeed;
+		freqChanged = true;
+	}
+
+	if (freqChanged)
+	{
+		for (T_LevelOscillatorPair& oscillator : m_Oscillators)
+		{
+			oscillator.second.SetFrequency(m_Frequency);
+		}
 	}
 }
 

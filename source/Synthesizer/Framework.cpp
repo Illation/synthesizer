@@ -257,7 +257,7 @@ void Framework::InitializeGTK()
 	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyPressedCallback), NULL);
 
 	// on release
-	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
 	auto keyReleasedCallback = [](GtkWidget* widget, GdkEventKey* evnt, gpointer data) -> gboolean
 	{
 		UNUSED(data);
@@ -266,7 +266,7 @@ void Framework::InitializeGTK()
 		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
 		return FALSE;
 	};
-	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), NULL);
+	g_signal_connect(G_OBJECT(window), "key_release_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), NULL);
 
 	//show all the widgets
 	gtk_widget_show_all(window);
