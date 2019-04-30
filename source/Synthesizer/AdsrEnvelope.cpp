@@ -34,7 +34,7 @@ void AdsrParameters::CalculateRuntimeParams()
 {
 	sustainTime = attack + decay;
 	releaseTime = sustainTime + release;
-	decayVelocity = decay * (1.0 - sustain);
+	sustainInv = 1.0 - sustain;
 }
 
 //---------------------------------
@@ -46,38 +46,58 @@ float AdsrEnvelope::GetSignal(bool const input, double const dt)
 {
 	if (input) // the key is pressed
 	{
-		if (m_Time > m_Params.GetSustainTime() || m_Time < 0.0) // reset to 0 if we are just starting or if we where releaseing
+		if (m_State == EnvelopeState::Release || m_Time < 0.0) // reset to 0 if we are just starting or if we where releaseing
 		{
+			m_State = EnvelopeState::Attack;
 			m_Time = 0.0;
 			m_Level = 0.f;
 		}
 
-		// increase timer if we are not sustaining
-		if (!(m_Time == m_Params.GetSustainTime()))
+		switch (m_State)
 		{
+		case EnvelopeState::Attack:
 			m_Time += dt;
-		}
-		
-		if (m_Time <= m_Params.GetAttack()) // increase during attack phase
-		{
-			m_Level = m_Time / m_Params.GetAttack();
-		}
-		else if (m_Time <= m_Params.GetSustainTime()) // decrease during decay phase
-		{
-			m_Level -= dt * m_Params.GetDecayVelocity();
-		}
-		else // hold at the same level once we are sustainging
-		{
-			m_Time = m_Params.GetSustainTime();
-			m_Level = m_Params.GetSustain();
+			if (m_Time >= m_Params.GetAttack())
+			{
+				if (m_Time >= m_Params.GetSustainTime())
+				{
+					m_State = EnvelopeState::Sustain;
+					m_Level = m_Params.GetSustain();
+				}
+				else
+				{
+					m_State = EnvelopeState::Decay;
+					m_Level = 1.0;
+				}
+			}
+			else // level during attack phase
+			{
+				m_Level = m_Time / m_Params.GetAttack();
+			}
+			break;
+		case EnvelopeState::Decay:
+			m_Time += dt;
+			if (m_Time > m_Params.GetSustainTime())
+			{
+				m_State = EnvelopeState::Sustain;
+				m_Level = m_Params.GetSustain();
+			}
+			else // level during decay phase
+			{
+				m_Level = 1.0 - ((m_Time - m_Params.GetAttack()) / m_Params.GetDecay()) * m_Params.GetSustainInv();
+			}
+			break;
+		case EnvelopeState::Sustain: // during sustain phase we do nothing
+			break;
 		}
 	}
 	else
 	{
 		if (m_Time >= 0) // we are still in the release phase
 		{
-			if (m_Time < m_Params.GetSustainTime()) // in case we released before reaching sustain we set the timer to begin after the sustain time
+			if (m_State != EnvelopeState::Release) // in case we released before reaching sustain we set the timer to begin after the sustain time
 			{
+				m_State = EnvelopeState::Release;
 				m_Time = m_Params.GetSustainTime();
 			}
 			

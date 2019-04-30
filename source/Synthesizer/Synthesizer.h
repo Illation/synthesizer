@@ -53,7 +53,8 @@ public:
 
 	float GetSample(double const dt);
 
-	void SetInputState(bool const input) { m_InputState = input; }
+	void SetInputOn() { m_InputState = true; }
+	void SetInputOff() { m_InputState = false; }
 
 private:
 

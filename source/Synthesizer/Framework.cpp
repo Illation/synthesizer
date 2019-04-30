@@ -286,10 +286,10 @@ void Framework::Loop()
 		TIME->Update();
 		PERFORMANCE->StartFrameTimer();
 
-		Update();
-
 		// run gtk main loop
 		gtk_main_iteration_do(false);
+
+		Update();
 
 		// Update keystates
 		InputManager::GetInstance()->Update();

@@ -23,7 +23,7 @@ struct AdsrParameters
 
 	double GetSustainTime() const { return sustainTime; }
 	double GetReleaseTime() const { return releaseTime; }
-	double GetDecayVelocity() const { return decayVelocity; }
+	double GetSustainInv() const { return sustainInv; }
 
 private:
 	double attack = 0.f;		// time to peak in seconds
@@ -34,7 +34,7 @@ private:
 	// derived runtime parameters
 	double sustainTime; 
 	double releaseTime;
-	double decayVelocity;
+	double sustainInv;
 };
 
 //---------------------------------
@@ -51,7 +51,19 @@ public:
 	bool IsComplete() const { return m_Time < 0.0; }
 
 private:
+	enum class EnvelopeState
+	{
+		Attack,
+		Decay,
+		Sustain,
+		Release
+	};
+
+	// Data
+	//////////
 	AdsrParameters const& m_Params;
+
+	EnvelopeState m_State = EnvelopeState::Release;
 
 	double m_Level = 0.f;
 	double m_Time = -1.0;

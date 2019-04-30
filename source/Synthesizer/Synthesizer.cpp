@@ -63,7 +63,7 @@ float Voice::GetSample(double const dt)
 		oscillatorOut += oscillator.first * oscillator.second.GetSample(dt);
 	}
 
-	return envelopeSignal;
+	return envelopeSignal * oscillatorOut;
 }
 
 //============
@@ -82,25 +82,18 @@ void Synthesizer::Initialize()
 
 	// Synth parameters
 	m_SynthParameters = SynthParameters();
-	m_SynthParameters.levelEnvelope = AdsrParameters(0.2, 0.2, 0.05, 0.1);
-
-	// test envelope
-	AdsrEnvelope env = AdsrEnvelope(m_SynthParameters.levelEnvelope);
-	double const delta = 0.05;
-	double const onTime = 2.0;
-	double time = 0.0;
-	while (time < onTime || !env.IsComplete())
-	{
-		LOG(std::to_string(time) + std::string(" - ") + std::to_string(env.GetSignal(time < onTime, delta)));
-		time += delta;
-	}
+	m_SynthParameters.levelEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.7);
 
 	// Oscillators
 	float const amplitude = 0.5f;
 
 	SynthParameters::OscillatorParameters osc;
 	osc.level = amplitude;
-	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Square;
+	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Triangle;
+	m_SynthParameters.oscillators.emplace_back(osc);
+
+	osc.level = amplitude / 4.0;
+	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Saw;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
 	// Map all the keys on our keyboard we want our synthesizer to play - later this could work through MIDI
@@ -120,7 +113,7 @@ void Synthesizer::Initialize()
 	keys.emplace_back(GDK_k);
 
 	// create a voice for every key we can press
-	float frequency = 261.6256f; // start at a C4
+	float frequency = 261.6256f / 2; // start at a C3
 	for (uint32 const key : keys)
 	{
 		m_Voices.emplace_back(key, Voice(frequency, m_SynthParameters));
@@ -139,7 +132,14 @@ void Synthesizer::Update()
 {
 	for (T_KeyVoicePair& keyVoice : m_Voices)
 	{
-		keyVoice.second.SetInputState(InputManager::GetInstance()->GetKeyState(keyVoice.first) >= E_KeyState::Down);
+		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Pressed)
+		{
+			keyVoice.second.SetInputOn();
+		}
+		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Released)
+		{
+			keyVoice.second.SetInputOff();
+		}
 	}
 }
 
