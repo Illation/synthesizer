@@ -16,12 +16,13 @@
 Voice::Voice(float const frequency, SynthParameters const& params)
 	: m_Frequency(frequency)
 	, m_Envelope(AdsrEnvelope(params.levelEnvelope))
+	, m_Filter(Filter(params.filter))
 {
 	// Create the oscillators
 	for (SynthParameters::OscillatorParameters const& oscParams : params.oscillators)
 	{
 		// set the pattern
-		I_WavePattern* wavePattern;
+		I_WavePattern* wavePattern = nullptr;
 		switch (oscParams.patternType)
 		{
 		case SynthParameters::OscillatorParameters::E_PatternType::Sine:
@@ -63,6 +64,8 @@ float Voice::GetSample(double const dt)
 		oscillatorOut += oscillator.first * oscillator.second.GetSample(dt);
 	}
 
+	oscillatorOut = static_cast<float>(m_Filter.GetSignal(static_cast<double>(oscillatorOut)));
+
 	return envelopeSignal * oscillatorOut;
 }
 
@@ -81,20 +84,29 @@ void Synthesizer::Initialize()
 	m_OutputSettings = &(Config::GetInstance()->GetOutput());
 
 	// Synth parameters
+	///////////////////
 	m_SynthParameters = SynthParameters();
-	m_SynthParameters.levelEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.7);
+
+	// level envelope
+	m_SynthParameters.levelEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.5);
+
+	// filter
+	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 0.5, 0.7);
 
 	// Oscillators
 	float const amplitude = 0.5f;
 
 	SynthParameters::OscillatorParameters osc;
-	osc.level = amplitude;
-	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Triangle;
+	osc.level = amplitude * (3.0 / 4.0);
+	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Square;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
 	osc.level = amplitude / 4.0;
-	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Saw;
+	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Triangle;
 	m_SynthParameters.oscillators.emplace_back(osc);
+
+	// input setup
+	//////////////
 
 	// Map all the keys on our keyboard we want our synthesizer to play - later this could work through MIDI
 	std::vector<uint32> keys;

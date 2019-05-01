@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "AdsrEnvelope.h"
 #include "Oscillator.h"
+#include "Filter.h"
 
 //---------------------------------
 // SynthParameters
@@ -39,6 +40,7 @@ struct SynthParameters
 
 	AdsrParameters levelEnvelope;
 	std::vector<OscillatorParameters> oscillators;
+	FilterParams filter;
 };
 
 //---------------------------------
@@ -65,6 +67,8 @@ private:
 	std::vector<T_LevelOscillatorPair> m_Oscillators; // oscillators and their volumes
 
 	AdsrEnvelope m_Envelope;
+
+	Filter m_Filter;
 
 	float m_Frequency = 440.f;
 
