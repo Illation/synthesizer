@@ -28,7 +28,7 @@ namespace etm
 	}
 
 	template<class T>
-	inline T Clamp(const T &value, T hi, T lo)
+	inline T Clamp(const T &value, T const hi, T const lo)
 	{
 		assert( hi >= lo );
 		T result = value;
@@ -42,9 +42,9 @@ namespace etm
 		return result;
 	}
 	template<class T>
-	inline T Clamp01(T& value)
+	inline T Clamp01(T const& value)
 	{
-		return Clamp(T, static_cast<T>(0), static_cast<T>(1));
+		return Clamp(T, static_cast<T>(1), static_cast<T>(0));
 	}
 
 	template<class T>

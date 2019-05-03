@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Filter.h"
 
+#include <Math/MathUtil.h>
+
 
 //============
 // FilterParams
@@ -21,11 +23,33 @@ FilterParams::FilterParams()
 //
 // Construct filter params with specific variables
 //
-FilterParams::FilterParams(FilterMode const mode, double const cutoff, double const resonance)
+FilterParams::FilterParams(FilterMode const mode, float const cutoff, float const resonance)
 	: m_Mode(mode)
-	, m_Cutoff(cutoff)
-	, m_Resonance(resonance)
+	, m_Cutoff(etm::Clamp(cutoff, 0.9999f, 0.0001f))
+	, m_Resonance(etm::Clamp(resonance, 1.f, 0.f))
 {
+	CalculateFeedbackAmount();
+}
+
+//---------------------------------
+// FilterParams::SetCutoff
+//
+// Set cutoff, clamped appropriately, recalculate feedback
+//
+void FilterParams::SetCutoff(float const val)
+{
+	m_Cutoff = etm::Clamp(val, 0.9999f, 0.0001f);
+	CalculateFeedbackAmount();
+}
+
+//---------------------------------
+// FilterParams::SetResonance
+//
+// Set resonance, recalculate feedback
+//
+void FilterParams::SetResonance(float const val)
+{
+	m_Resonance = etm::Clamp(val, 1.f, 0.f);
 	CalculateFeedbackAmount();
 }
 
@@ -36,7 +60,7 @@ FilterParams::FilterParams(FilterMode const mode, double const cutoff, double co
 //
 void FilterParams::CalculateFeedbackAmount()
 {
-	m_FeedbackAmount = m_Resonance + m_Resonance / (1.0 - m_Cutoff);
+	m_FeedbackAmount = m_Resonance + m_Resonance / (1.f - m_Cutoff);
 }
 
 //============
@@ -48,7 +72,7 @@ void FilterParams::CalculateFeedbackAmount()
 //
 // Processes the input signal from the synthesizer
 //
-double Filter::GetSignal(double const input)
+float Filter::GetSignal(float const input)
 {
 	// Pass through four filters, the first one adds resonance
 	m_Buf0 += m_Params.GetCutoff() * (input - m_Buf0 + m_Params.GetFeedbackAmount() * (m_Buf0 - m_Buf1));
@@ -68,6 +92,6 @@ double Filter::GetSignal(double const input)
 		return m_Buf0 - m_Buf3;
 
 	default:
-		return 0.0;
+		return 0.f;
 	}
 }

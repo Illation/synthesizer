@@ -22,13 +22,17 @@ public:
 
 	// constructor
 	FilterParams();
-	FilterParams(FilterMode const mode, double const cutoff, double const resonance);
+	FilterParams(FilterMode const mode, float const cutoff, float const resonance);
+
+	void SetMode(FilterMode const val) { m_Mode = val; }
+	void SetCutoff(float const val);
+	void SetResonance(float const val);
 
 	// Getters
 	FilterMode GetMode() const { return m_Mode; }
-	double GetCutoff() const { return m_Cutoff; }
-	double GetResonance() const { return m_Resonance; }
-	double GetFeedbackAmount() const { return m_FeedbackAmount; }
+	float GetCutoff() const { return m_Cutoff; }
+	float GetResonance() const { return m_Resonance; }
+	float GetFeedbackAmount() const { return m_FeedbackAmount; }
 
 private:
 
@@ -41,11 +45,11 @@ private:
 	// set parameters
 	FilterMode m_Mode = FilterMode::lowPass;
 
-	double m_Cutoff = 0.99;
-	double m_Resonance = 0.0;
+	float m_Cutoff = 0.9999f;
+	float m_Resonance = 0.f;
 
 	// derived
-	double m_FeedbackAmount;
+	float m_FeedbackAmount;
 };
 
 //---------------------------------
@@ -59,7 +63,7 @@ public:
 	Filter(FilterParams const& params) : m_Params(params) {}
 
 	// processing function
-	double GetSignal(double const input);
+	float GetSignal(float const input);
 
 private:
 
@@ -68,8 +72,8 @@ private:
 
 	FilterParams const& m_Params;
 
-	double m_Buf0 = 0.0;
-	double m_Buf1 = 0.0;
-	double m_Buf2 = 0.0;
-	double m_Buf3 = 0.0;
+	float m_Buf0 = 0.f;
+	float m_Buf1 = 0.f;
+	float m_Buf2 = 0.f;
+	float m_Buf3 = 0.f;
 };

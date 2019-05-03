@@ -56,17 +56,15 @@ float Voice::GetSample(double const dt)
 		return 0.f;
 	}
 
-	float envelopeSignal = m_Envelope.GetSignal(m_InputState, dt);
-
 	float oscillatorOut = 0.f;
 	for (T_LevelOscillatorPair& oscillator : m_Oscillators)
 	{
 		oscillatorOut += oscillator.first * oscillator.second.GetSample(dt);
 	}
 
-	oscillatorOut = static_cast<float>(m_Filter.GetSignal(static_cast<double>(oscillatorOut)));
+	oscillatorOut = m_Filter.GetSignal(oscillatorOut);
 
-	return envelopeSignal * oscillatorOut;
+	return m_Envelope.GetSignal(m_InputState, dt) * oscillatorOut;
 }
 
 //============
@@ -91,7 +89,7 @@ void Synthesizer::Initialize()
 	m_SynthParameters.levelEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.5);
 
 	// filter
-	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 0.5, 0.7);
+	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 0.5f, 0.7f);
 
 	// Oscillators
 	float const amplitude = 0.5f;
@@ -138,20 +136,47 @@ void Synthesizer::Initialize()
 //---------------------------------
 // Synthesizer::Update
 //
-// Update which voices are active
+// Update which voices are active, adjust parameters
 //
 void Synthesizer::Update()
 {
+	// Update voice input states
 	for (T_KeyVoicePair& keyVoice : m_Voices)
 	{
 		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Pressed)
 		{
 			keyVoice.second.SetInputOn();
 		}
+
 		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Released)
 		{
 			keyVoice.second.SetInputOff();
 		}
+	}
+
+	// change parameters filter parameters
+	float changeSpeed = 0.5f;
+
+	// cutoff
+	if (InputManager::GetInstance()->GetKeyState(GDK_Up) >= E_KeyState::Down)
+	{
+		m_SynthParameters.filter.SetCutoff(m_SynthParameters.filter.GetCutoff() + changeSpeed * TIME->DeltaTime());
+	}
+
+	if (InputManager::GetInstance()->GetKeyState(GDK_Down) >= E_KeyState::Down)
+	{
+		m_SynthParameters.filter.SetCutoff(m_SynthParameters.filter.GetCutoff() - changeSpeed * TIME->DeltaTime());
+	}
+
+	// resonance
+	if (InputManager::GetInstance()->GetKeyState(GDK_Right) >= E_KeyState::Down)
+	{
+		m_SynthParameters.filter.SetResonance(m_SynthParameters.filter.GetResonance() + changeSpeed * TIME->DeltaTime());
+	}
+
+	if (InputManager::GetInstance()->GetKeyState(GDK_Left) >= E_KeyState::Down)
+	{
+		m_SynthParameters.filter.SetResonance(m_SynthParameters.filter.GetResonance() - changeSpeed * TIME->DeltaTime());
 	}
 }
 
