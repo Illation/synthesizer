@@ -14,8 +14,13 @@ struct AdsrParameters
 	AdsrParameters();
 	AdsrParameters(double const a, double const d, double const s, double const r);
 
-	void CalculateRuntimeParams();
+	// Setters
+	void SetAttack(double const val);
+	void SetDecay(double const val);
+	void SetSustain(double const val);
+	void SetRelease(double const val);
 
+	// Getters
 	double GetAttack() const { return attack; }
 	double GetDecay() const { return decay; }
 	double GetSustain() const { return sustain; }
@@ -26,6 +31,15 @@ struct AdsrParameters
 	double GetSustainInv() const { return sustainInv; }
 
 private:
+
+	void CalculateSustainTime();
+	void CalculateReleaseTime();
+	void CalculateSustainInv();
+	void CalculateRuntimeParams();
+
+	// Data
+	/////////
+
 	double attack = 0.f;		// time to peak in seconds
 	double decay = 0.0;		// time to sustain level in seconds
 	double sustain = 1.f;	// sustain level, between 0 and 1

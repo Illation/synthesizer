@@ -8,6 +8,9 @@
 typedef void PaStream;
 typedef int PaError;
 
+class RtMidiIn;
+class RtMidiError;
+
 //---------------------------------
 // CommandlineArguments
 //
@@ -57,6 +60,9 @@ private:
 	CommandlineArguments m_CmdArguments;
 
 	std::unique_ptr<Synthesizer> m_Synthesizer;
+
+	// MIDI input
+	RtMidiIn *m_MidiInput;
 
 	// Portaudio stream
 	PaStream *m_PaStream;	// Will become invalid after TerminateAudio is called

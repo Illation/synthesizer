@@ -62,7 +62,7 @@ function windowsPlatformPostBuild()
 end
 
 configuration "Debug"
-	defines { "_DEBUG" }
+	defines { "_DEBUG", "__RTMIDI_DEBUG__ " }
 	flags { "Symbols", "ExtraWarnings" }
 configuration "Development"
 	flags {"OptimizeSpeed", "Symbols", "ExtraWarnings" }
@@ -73,7 +73,7 @@ configuration "Shipping"
 configuration "vs*"
 	flags { "NoIncrementalLink", "NoEditAndContinue" }
 	linkoptions { "/ignore:4221" }
-	defines { "PLATFORM_Win" }
+	defines { "PLATFORM_Win", "__WINDOWS_MM__" }
 	includedirs { 
 		path.join(DEP_INCLUDE, "portaudio"),
 		path.join(DEP_INCLUDE, "gtk")
@@ -121,7 +121,8 @@ project "Synthesizer"
 	outputDirectories("Synthesizer")
 
 	configuration "vs*"
-		flags { "Winmain"}
+		flags { "Winmain" }
+		links { "winmm" } -- rtMidi on windows
 
 	platformLibraries()
 	windowsPlatformPostBuild()
@@ -177,7 +178,9 @@ project "Synthesizer"
 		path.join(SOURCE_DIR, "Synthesizer/**.inl"), 
 	}
 
-	nopch { 	}	--c code shouldn't use precompiled headers
+	nopch { 	
+		path.join(SOURCE_DIR, "Synthesizer/Vendor/**.cpp"), 
+	}	--vendor code shouldn't use precompiled headers
 
 	pchheader "stdafx.h"
 	pchsource "../source/Synthesizer/stdafx.cpp"

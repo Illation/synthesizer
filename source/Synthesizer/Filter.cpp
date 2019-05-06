@@ -11,16 +11,6 @@
 //---------------------------------
 // FilterParams::FilterParams
 //
-// Default filter param constructor
-//
-FilterParams::FilterParams()
-{
-	CalculateFeedbackAmount();
-}
-
-//---------------------------------
-// FilterParams::FilterParams
-//
 // Construct filter params with specific variables
 //
 FilterParams::FilterParams(FilterMode const mode, float const cutoff, float const resonance)
@@ -28,7 +18,6 @@ FilterParams::FilterParams(FilterMode const mode, float const cutoff, float cons
 	, m_Cutoff(etm::Clamp(cutoff, 0.9999f, 0.0001f))
 	, m_Resonance(etm::Clamp(resonance, 1.f, 0.f))
 {
-	CalculateFeedbackAmount();
 }
 
 //---------------------------------
@@ -39,7 +28,6 @@ FilterParams::FilterParams(FilterMode const mode, float const cutoff, float cons
 void FilterParams::SetCutoff(float const val)
 {
 	m_Cutoff = etm::Clamp(val, 0.9999f, 0.0001f);
-	CalculateFeedbackAmount();
 }
 
 //---------------------------------
@@ -50,17 +38,6 @@ void FilterParams::SetCutoff(float const val)
 void FilterParams::SetResonance(float const val)
 {
 	m_Resonance = etm::Clamp(val, 1.f, 0.f);
-	CalculateFeedbackAmount();
-}
-
-//---------------------------------
-// FilterParams::CalculateFeedbackAmount
-//
-// Calculate derived variables
-//
-void FilterParams::CalculateFeedbackAmount()
-{
-	m_FeedbackAmount = m_Resonance + m_Resonance / (1.f - m_Cutoff);
 }
 
 //============
@@ -74,11 +51,14 @@ void FilterParams::CalculateFeedbackAmount()
 //
 float Filter::GetSignal(float const input)
 {
+	float totalCutoff = m_Params.GetCutoff() + m_EnvelopeVal;
+	float feedbackAmount = m_Params.GetResonance() + m_Params.GetResonance() / (1.f - totalCutoff);
+
 	// Pass through four filters, the first one adds resonance
-	m_Buf0 += m_Params.GetCutoff() * (input - m_Buf0 + m_Params.GetFeedbackAmount() * (m_Buf0 - m_Buf1));
-	m_Buf1 += m_Params.GetCutoff() * (m_Buf0 - m_Buf1);
-	m_Buf2 += m_Params.GetCutoff() * (m_Buf1 - m_Buf2);
-	m_Buf3 += m_Params.GetCutoff() * (m_Buf2 - m_Buf3);
+	m_Buf0 += totalCutoff * (input - m_Buf0 + feedbackAmount * (m_Buf0 - m_Buf1));
+	m_Buf1 += totalCutoff * (m_Buf0 - m_Buf1);
+	m_Buf2 += totalCutoff * (m_Buf1 - m_Buf2);
+	m_Buf3 += totalCutoff * (m_Buf2 - m_Buf3);
 
 	switch (m_Params.GetMode()) 
 	{
@@ -94,4 +74,14 @@ float Filter::GetSignal(float const input)
 	default:
 		return 0.f;
 	}
+}
+
+//---------------------------------
+// FilterParams::SetEnvelopeValue
+//
+// Adds to the cutoff
+//
+void Filter::SetEnvelopeValue(float const val)
+{
+	m_EnvelopeVal = etm::Clamp(val, 0.9999f - m_Params.GetCutoff(), 0.f);
 }

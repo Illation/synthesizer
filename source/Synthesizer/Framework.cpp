@@ -2,6 +2,7 @@
 #include "Framework.h"
 
 #include <portaudio.h>
+#include <Vendor/RtMidi.h>
 
 #include <gtk/gtk.h>
 
@@ -9,6 +10,7 @@
 #include <Helper/InputManager.h>
 
 #include "Config.h"
+#include "MidiManager.h"
 
 //---------------------------------
 // Framework::Framework
@@ -27,6 +29,8 @@ Framework::Framework(CommandlineArguments const& args)
 //
 Framework::~Framework()
 {
+	TerminateAudio();
+
 	Time::GetInstance()->DestroyInstance();
 	PerformanceInfo::GetInstance()->DestroyInstance();
 	InputManager::GetInstance()->DestroyInstance();
@@ -87,11 +91,91 @@ void Framework::InitializeUtilities()
 //---------------------------------
 // Framework::InitializeAudio
 //
-// Initialize portaudio library, create a stream
+// Initialize portaudio library, create a stream and start listening for MIDI messages
 //
 bool Framework::InitializeAudio()
 {
+	// Initialize MIDI
+	//////////////
+
+	// run rtMidi errors through our logging system
+	auto onRtMidiError = [](RtMidiError::Type type, const std::string &errorText, void* userData)
+	{
+		UNUSED(userData);
+
+		LogLevel logLevel = LogLevel::Error;
+		switch (type)
+		{
+		case RtMidiError::WARNING:
+		case RtMidiError::DEBUG_WARNING:
+		case RtMidiError::UNSPECIFIED:
+		case RtMidiError::NO_DEVICES_FOUND:
+			logLevel = LogLevel::Warning;
+		}
+
+		LOG(errorText, logLevel);
+	};
+
+	// make an input device
+	try 
+	{
+		m_MidiInput = new RtMidiIn();
+	}
+	catch (RtMidiError &error) 
+	{
+		onRtMidiError(error.getType(), error.getMessage(), nullptr);
+		return false;
+	}
+
+	LOG("RtMidi version: " + m_MidiInput->getVersion());
+
+	// Log error messages
+	m_MidiInput->setErrorCallback(onRtMidiError);
+
+	// Check inputs.
+	uint32 numPorts = m_MidiInput->getPortCount();
+	if (numPorts > 0)
+	{
+		// yay we have a midi device
+
+		// log our available ports
+		LOG("There are '" + std::to_string(numPorts) + std::string("' MIDI input sources available."));
+		for (uint32 i = 0; i < numPorts; i++) 
+		{
+			LOG("\t Input Port #" + std::to_string(i) + std::string(": '") + m_MidiInput->getPortName(i) + std::string("'"));
+		}
+
+		// open the port we want
+		m_MidiInput->openPort(0);
+
+		// midi callback function
+		auto onMidiCallback = [](double dt, std::vector<uint8>* message, void* userData)
+		{
+			UNUSED(userData);
+
+			if (message != nullptr)
+			{
+				MidiManager::GetInstance()->HandleMidiMessage(dt, *message);
+			}
+		};
+
+		m_MidiInput->setCallback(onMidiCallback);
+
+		// Don't ignore sysex, timing, or active sensing messages.
+		m_MidiInput->ignoreTypes(false, false, false);
+	}
+	else
+	{
+		LOG("No MIDI devices found, you can use your keyboard to play notes.");
+
+		SafeDelete(m_MidiInput);
+	}
+
+	LOG("");
+
+
 	// Initialize portaudio
+	///////////////////////
 	PaError err = Pa_Initialize();
 	if (err != paNoError)
 	{
@@ -208,6 +292,9 @@ void Framework::TerminateAudio()
 	{
 		LogPortAudioError(err);
 	}
+
+	SafeDelete(m_MidiInput);
+	MidiManager::GetInstance()->DestroyInstance();
 }
 
 //---------------------------------

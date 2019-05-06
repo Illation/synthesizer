@@ -1,8 +1,11 @@
 #include "stdafx.h"
 #include "Synthesizer.h"
+
+#include "MidiManager.h"
+
 #include <Helper/Time.h>
 #include <Helper/InputManager.h>
-#include "gdk/gdkkeysyms-compat.h"
+#include <gdk/gdkkeysyms-compat.h>
 
 //============
 // Voice
@@ -15,56 +18,70 @@
 //
 Voice::Voice(float const frequency, SynthParameters const& params)
 	: m_Frequency(frequency)
-	, m_Envelope(AdsrEnvelope(params.levelEnvelope))
+	, m_LevelEnvelope(AdsrEnvelope(params.levelEnvelope))
+	, m_FilterEnvelope(AdsrEnvelope(params.filterEnvelope))
+	, m_FilterEnvelopeAmount(params.filterEnvelopeAmount)
 	, m_Filter(Filter(params.filter))
 {
 	// Create the oscillators
-	for (SynthParameters::OscillatorParameters const& oscParams : params.oscillators)
+	for (OscillatorParameters const& oscParams : params.oscillators)
 	{
-		// set the pattern
-		I_WavePattern* wavePattern = nullptr;
-		switch (oscParams.patternType)
-		{
-		case SynthParameters::OscillatorParameters::E_PatternType::Sine:
-			wavePattern = new SinePattern();
-			break;
-		case SynthParameters::OscillatorParameters::E_PatternType::Saw:
-			wavePattern = new SawPattern();
-			break;
-		case SynthParameters::OscillatorParameters::E_PatternType::Square:
-			wavePattern = new SquarePattern();
-			break;
-		case SynthParameters::OscillatorParameters::E_PatternType::Triangle:
-			wavePattern = new TrianglePattern();
-			break;
-		}
-
-		// create the oscillator paired with it's level (amplitude)
-		m_Oscillators.emplace_back(oscParams.level, Oscillator(frequency + oscParams.frequencyOffset, wavePattern));
+		m_Oscillators.emplace_back(Oscillator(frequency, oscParams));
 	}
 }
 
 //---------------------------------
 // Voice::GetSample
 //
-// Get a sample for this voices oscillators multiplied by its envelope
+// Synthesize this voice
 //
 float Voice::GetSample(double const dt)
 {
-	if (!m_InputState && m_Envelope.IsComplete())
+	// Don't calculate anything if this voice is not active
+	if (!m_InputState && m_LevelEnvelope.IsComplete())
 	{
 		return 0.f;
 	}
 
+	// Get the combined value from the oscillators
 	float oscillatorOut = 0.f;
-	for (T_LevelOscillatorPair& oscillator : m_Oscillators)
+	for (Oscillator& oscillator : m_Oscillators)
 	{
-		oscillatorOut += oscillator.first * oscillator.second.GetSample(dt);
+		if (oscillator.GetLevel() != 0.f)
+		{
+			oscillatorOut += oscillator.GetLevel() * oscillator.GetSample(dt);
+		}
 	}
 
+	// Set the filter envelope
+	m_Filter.SetEnvelopeValue(m_FilterEnvelopeAmount * m_FilterEnvelope.GetSignal(m_InputState, dt));
+
+	// Filter the signal from the oscillators
 	oscillatorOut = m_Filter.GetSignal(oscillatorOut);
 
-	return m_Envelope.GetSignal(m_InputState, dt) * oscillatorOut;
+	// multiply the signal with the volume of the level envelope
+	return m_Velocity * m_LevelEnvelope.GetSignal(m_InputState, dt) * oscillatorOut;
+}
+
+//---------------------------------
+// Voice::SetInputOn
+//
+// Activates a note and changes its velocity
+//
+void Voice::SetInputOn(float const velocity)
+{
+	m_InputState = true;
+	m_Velocity = velocity;
+}
+
+//---------------------------------
+// Voice::SetInputOff
+//
+// Makes a note stop playing. Tone may continue for a while depending on envelope.
+//
+void Voice::SetInputOff()
+{
+	m_InputState = false;
 }
 
 //============
@@ -89,23 +106,46 @@ void Synthesizer::Initialize()
 	m_SynthParameters.levelEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.5);
 
 	// filter
+	m_SynthParameters.filterEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.5);
 	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 0.5f, 0.7f);
+	m_SynthParameters.filterEnvelopeAmount = 0.f;
 
 	// Oscillators
-	float const amplitude = 0.5f;
+	m_SynthParameters.level = 0.5f;
+	m_SynthParameters.oscBalance = 0.f;
 
-	SynthParameters::OscillatorParameters osc;
-	osc.level = amplitude * (3.0 / 4.0);
-	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Square;
+	OscillatorParameters osc;
+	osc.patternType = E_PatternType::Square;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
-	osc.level = amplitude / 4.0;
-	osc.patternType = SynthParameters::OscillatorParameters::E_PatternType::Triangle;
+	osc.patternType = E_PatternType::Triangle;
 	m_SynthParameters.oscillators.emplace_back(osc);
+
+	SetOscillatorBalance();
 
 	// input setup
 	//////////////
+	MidiManager::GetInstance()->RegisterListener(E_MidiStatus::NoteOn, this);
+	MidiManager::GetInstance()->RegisterListener(E_MidiStatus::NoteOff, this);
+	MidiManager::GetInstance()->RegisterListener(E_MidiStatus::ControlChange, this);
 
+	// Create a voice for every possible midi note
+	for (uint8 note = 0; note < 128; ++note)
+	{
+		// calculate frequency based on Note number
+		float frequency = 440.f * powf(2.f, static_cast<float>(static_cast<int32>(note) - 69) / 12.f);
+
+		m_Voices.emplace_back(note, Voice(frequency, m_SynthParameters));
+	}
+}
+
+//---------------------------------
+// Synthesizer::Update
+//
+// Update which voices are active, adjust parameters
+//
+void Synthesizer::Update()
+{
 	// Map all the keys on our keyboard we want our synthesizer to play - later this could work through MIDI
 	std::vector<uint32> keys;
 	keys.emplace_back(GDK_a);
@@ -122,33 +162,20 @@ void Synthesizer::Initialize()
 	keys.emplace_back(GDK_j);
 	keys.emplace_back(GDK_k);
 
-	// create a voice for every key we can press
-	float frequency = 261.6256f / 2; // start at a C3
-	for (uint32 const key : keys)
-	{
-		m_Voices.emplace_back(key, Voice(frequency, m_SynthParameters));
+	const uint8 offset = 57; // A will be the 57th MIDI note
 
-		// increase frequency with equal temperament
-		frequency *= 1.05946f; 
-	}
-}
-
-//---------------------------------
-// Synthesizer::Update
-//
-// Update which voices are active, adjust parameters
-//
-void Synthesizer::Update()
-{
 	// Update voice input states
-	for (T_KeyVoicePair& keyVoice : m_Voices)
+	for (uint32 key = 0; key < keys.size(); ++key)
 	{
-		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Pressed)
+		// unsafe for now!
+		T_KeyVoicePair& keyVoice = m_Voices[key + offset];
+
+		if (InputManager::GetInstance()->GetKeyState(keys[key]) == E_KeyState::Pressed)
 		{
-			keyVoice.second.SetInputOn();
+			keyVoice.second.SetInputOn(1.f);
 		}
 
-		if (InputManager::GetInstance()->GetKeyState(keyVoice.first) == E_KeyState::Released)
+		if (InputManager::GetInstance()->GetKeyState(keys[key]) == E_KeyState::Released)
 		{
 			keyVoice.second.SetInputOff();
 		}
@@ -207,4 +234,215 @@ std::vector<float> Synthesizer::GetSample()
 		ret.emplace_back(voiceOut);
 	}
 	return ret;
+}
+
+//---------------------------------
+// Synthesizer::OnMidiEvent
+//
+// Change the state of the synthesizer based on midi events
+//
+void Synthesizer::OnMidiEvent(E_MidiStatus const status, uint8 const channel, std::vector<uint8> const& data)
+{
+	UNUSED(channel);
+
+	// Parse the data
+	if (data.size() != 2)
+	{ 
+		LOG("Synthesizer::OnMidiEvent > Expected two bytes of data!", Warning);
+		return;
+	}
+
+	uint8 note = data[0];
+	float value = static_cast<float>(data[1]) / 127.f;
+
+	// unsafe for now!
+	T_KeyVoicePair& keyVoice = m_Voices[note];
+
+	switch (status)
+	{
+	case E_MidiStatus::NoteOn:
+		keyVoice.second.SetInputOn(value);
+		break;
+	case E_MidiStatus::NoteOff:
+		keyVoice.second.SetInputOff();
+		break;
+	case E_MidiStatus::ControlChange:
+		ChangeControl(static_cast<E_Control>(note), value);
+		break;
+	}
+}
+
+//---------------------------------
+// Synthesizer::ChangeControl
+//
+// Change synth parameters based on control values
+//
+void Synthesizer::ChangeControl(E_Control const control, float const value)
+{
+	// #todo: Make this configurable
+	static const auto getEnvelopeParam = [](float const value) -> float
+	{
+		return (1.f - value) * 5.f;
+	};
+
+	switch (control)
+	{
+	case E_Control::OscTune:
+		SetOscillatorTune(value);
+		break;
+	case E_Control::OscLevel:
+		m_SynthParameters.oscBalance = value;
+		SetOscillatorBalance();
+		break;
+	case E_Control::OscMod1:
+		SetOscillatorMode(0, value);
+		break;
+	case E_Control::OscMod2:
+		SetOscillatorMode(1, value);
+		break;
+
+	case E_Control::Cutoff:
+		m_SynthParameters.filter.SetCutoff(value);
+		break;
+	case E_Control::Resonance:
+		m_SynthParameters.filter.SetResonance(value);
+		break;
+	case E_Control::EnvAmount:
+		m_SynthParameters.filterEnvelopeAmount = value;
+		break;
+
+	case E_Control::LevelAttack:
+		m_SynthParameters.levelEnvelope.SetAttack(getEnvelopeParam(value));
+		break;
+	case E_Control::LevelDecay:
+		m_SynthParameters.levelEnvelope.SetDecay(getEnvelopeParam(value));
+		break;
+	case E_Control::LevelSustain:
+		m_SynthParameters.levelEnvelope.SetSustain(value);
+		break;
+	case E_Control::LevelRelease:
+		m_SynthParameters.levelEnvelope.SetRelease(getEnvelopeParam(value));
+		break;
+
+	case E_Control::FilterAttack:
+		m_SynthParameters.filterEnvelope.SetAttack(getEnvelopeParam(value));
+		break;
+	case E_Control::FilterDecay:
+		m_SynthParameters.filterEnvelope.SetDecay(getEnvelopeParam(value));
+		break;
+	case E_Control::FilterSustain:
+		m_SynthParameters.filterEnvelope.SetSustain(value);
+		break;
+	case E_Control::FilterRelease:
+		m_SynthParameters.filterEnvelope.SetRelease(getEnvelopeParam(value));
+		break;
+
+	case E_Control::Volume:
+		m_SynthParameters.level = value;
+		SetOscillatorBalance();
+		break;
+
+	default:
+		LOG("Unhandled MIDI control change, control: " + std::to_string(static_cast<uint8>(control)) + " : " + std::to_string(value));
+	}
+}
+
+//---------------------------------
+// Synthesizer::SetOscillatorMode
+//
+// Sets the pattern of an oscillator based on the fraction of its value - assumes value is between 0 and 1
+//
+void Synthesizer::SetOscillatorMode(uint8 const oscIdx, float const value)
+{
+	// check safety
+	if (oscIdx >= m_SynthParameters.oscillators.size())
+	{
+		LOG("Synthesizer::SetOscillatorMode > Oscillator index > number of oscillators", Warning);
+		return;
+	}
+
+	// figure out the pattern we want based on the value
+	uint8 patternIndex = static_cast<uint8>(value * static_cast<float>(E_PatternType::COUNT));
+	if (patternIndex == static_cast<uint8>(E_PatternType::COUNT)) // this can happen if value == 1.f
+	{
+		patternIndex--;
+	}
+	E_PatternType newPattern = static_cast<E_PatternType>(patternIndex);
+
+	// check that we are not already of that pattern type
+	if (m_SynthParameters.oscillators[oscIdx].patternType != newPattern)
+	{
+		m_SynthParameters.oscillators[oscIdx].patternType = newPattern;
+
+		// set the oscillators for every voice to the new type
+		for (T_KeyVoicePair& keyVoice : m_Voices)
+		{
+			keyVoice.second.GetOscillator(oscIdx).SetPattern(newPattern);
+		}
+
+		// log the new type
+		std::string patternString;
+		switch (newPattern)
+		{
+		case E_PatternType::Sine:
+			patternString = "Sine Wave";
+			break;
+		case E_PatternType::Square:
+			patternString = "Square Wave";
+			break;
+		case E_PatternType::Saw:
+			patternString = "Saw Wave";
+			break;
+		case E_PatternType::Triangle:
+			patternString = "Triangle Wave";
+			break;
+		}
+		LOG("Synthesizer::SetOscillatorMode > Oscillator #" + std::to_string(oscIdx) + std::string(" set to: ") + patternString);
+	}
+}
+
+//---------------------------------
+// Synthesizer::SetOscillatorBalance
+//
+// Sets the volume balance for the first two oscillators
+//
+void Synthesizer::SetOscillatorBalance()
+{
+	// check safety
+	if (m_SynthParameters.oscillators.size() != 2)
+	{
+		LOG("Synthesizer::SetOscillatorBalance > this function assumes there are two oscillators", Warning);
+		return;
+	}
+
+	m_SynthParameters.oscillators[0].level = m_SynthParameters.level * (1.f - m_SynthParameters.oscBalance);
+	m_SynthParameters.oscillators[1].level = m_SynthParameters.level * m_SynthParameters.oscBalance;
+}
+
+//---------------------------------
+// Synthesizer::SetOscillatorTune
+//
+// tunes the second oscillator at intervals in octaves
+//
+void Synthesizer::SetOscillatorTune(float const value)
+{
+	// check safety
+	if (m_SynthParameters.oscillators.size() < 2)
+	{
+		LOG("Synthesizer::SetOscillatorTune > this function assumes there are at least two oscillators", Warning);
+		return;
+	}
+
+	// #todo: Make this configurable
+	float const maxOctaveOffset = 3.25f; // adding 0.5f gives us some wiggleroom
+
+	float const octaveOffset = std::floorf(((value * 2.f - 1.f) * maxOctaveOffset) + 0.5f);
+	float const newFreqMultiplier = std::powf(2.f, octaveOffset);
+
+	if (newFreqMultiplier != m_SynthParameters.oscillators[1].frequencyMultiplier)
+	{
+		m_SynthParameters.oscillators[1].frequencyMultiplier = std::powf(2.f, octaveOffset);
+
+		LOG("Synthesizer::SetOscillatorMode > Oscillator #2 octave offset: '" + std::to_string(octaveOffset) + std::string("'"));
+	}
 }

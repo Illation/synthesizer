@@ -26,15 +26,89 @@ AdsrParameters::AdsrParameters(double const a, double const d, double const s, d
 }
 
 //---------------------------------
+// AdsrParameters::SetAttack
+//
+// Set attack and recalculate its derived parameters
+//
+void AdsrParameters::SetAttack(double const val)
+{
+	attack = val;
+	CalculateSustainTime();
+}
+
+//---------------------------------
+// AdsrParameters::SetDecay
+//
+// Set decay and recalculate its derived parameters
+//
+void AdsrParameters::SetDecay(double const val)
+{
+	decay = val;
+	CalculateSustainTime();
+}
+
+//---------------------------------
+// AdsrParameters::SetSustain
+//
+// Set sustain and recalculate its derived parameters
+//
+void AdsrParameters::SetSustain(double const val)
+{
+	sustain = val;
+	CalculateSustainInv();
+}
+
+//---------------------------------
+// AdsrParameters::SetRelease
+//
+// Set release and recalculate its derived parameters
+//
+void AdsrParameters::SetRelease(double const val)
+{
+	release = val;
+	CalculateReleaseTime();
+}
+
+//---------------------------------
+// AdsrParameters::CalculateSustainTime
+//
+// Calculate sustain time from attack and decay
+//
+void AdsrParameters::CalculateSustainTime()
+{
+	sustainTime = attack + decay;
+	CalculateReleaseTime();
+}
+
+//---------------------------------
+// AdsrParameters::CalculateReleaseTime
+//
+// calculate release time from sustain time and release
+//
+void AdsrParameters::CalculateReleaseTime()
+{
+	releaseTime = sustainTime + release;
+}
+
+//---------------------------------
+// AdsrParameters::CalculateSustainInv
+//
+// Calculate inverse sustain from sustain
+//
+void AdsrParameters::CalculateSustainInv()
+{
+	sustainInv = 1.0 - sustain;
+}
+
+//---------------------------------
 // AdsrParameters::CalculateRuntimeParams
 //
 // should be recalculated every time any of the parameters change
 //
 void AdsrParameters::CalculateRuntimeParams()
 {
-	sustainTime = attack + decay;
-	releaseTime = sustainTime + release;
-	sustainInv = 1.0 - sustain;
+	CalculateSustainTime();
+	CalculateSustainInv();
 }
 
 //---------------------------------

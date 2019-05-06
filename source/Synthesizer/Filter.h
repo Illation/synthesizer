@@ -21,7 +21,7 @@ public:
 	};
 
 	// constructor
-	FilterParams();
+	FilterParams() = default;
 	FilterParams(FilterMode const mode, float const cutoff, float const resonance);
 
 	void SetMode(FilterMode const val) { m_Mode = val; }
@@ -32,12 +32,8 @@ public:
 	FilterMode GetMode() const { return m_Mode; }
 	float GetCutoff() const { return m_Cutoff; }
 	float GetResonance() const { return m_Resonance; }
-	float GetFeedbackAmount() const { return m_FeedbackAmount; }
 
 private:
-
-	// Calculate derived variables
-	void CalculateFeedbackAmount();
 
 	// Data
 	/////////
@@ -47,9 +43,6 @@ private:
 
 	float m_Cutoff = 0.9999f;
 	float m_Resonance = 0.f;
-
-	// derived
-	float m_FeedbackAmount;
 };
 
 //---------------------------------
@@ -65,12 +58,16 @@ public:
 	// processing function
 	float GetSignal(float const input);
 
+	void SetEnvelopeValue(float const val);
+
 private:
 
 	// Data
 	/////////
 
 	FilterParams const& m_Params;
+
+	float m_EnvelopeVal = 0.f;
 
 	float m_Buf0 = 0.f;
 	float m_Buf1 = 0.f;

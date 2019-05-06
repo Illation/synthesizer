@@ -2,6 +2,6 @@
   "outputSettings": {
     "sample rate": 22050,
     "channels": 2,
-    "frames per buffer": 256
+    "frames per buffer": 16
   }
 }
