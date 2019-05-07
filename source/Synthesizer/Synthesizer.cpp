@@ -107,7 +107,7 @@ void Synthesizer::Initialize()
 
 	// filter
 	m_SynthParameters.filterEnvelope = AdsrParameters(0.1, 0.05, 0.5, 0.5);
-	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 0.5f, 0.7f);
+	m_SynthParameters.filter = FilterParams(FilterParams::FilterMode::lowPass, 1.f, 0.f);
 	m_SynthParameters.filterEnvelopeAmount = 0.f;
 
 	// Oscillators
@@ -115,7 +115,7 @@ void Synthesizer::Initialize()
 	m_SynthParameters.oscBalance = 0.f;
 
 	OscillatorParameters osc;
-	osc.patternType = E_PatternType::Square;
+	osc.patternType = E_PatternType::Saw;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
 	osc.patternType = E_PatternType::Triangle;
@@ -204,6 +204,16 @@ void Synthesizer::Update()
 	if (InputManager::GetInstance()->GetKeyState(GDK_Left) >= E_KeyState::Down)
 	{
 		m_SynthParameters.filter.SetResonance(m_SynthParameters.filter.GetResonance() - changeSpeed * TIME->DeltaTime());
+	}
+
+	// poly blep
+	if (InputManager::GetInstance()->GetKeyState(GDK_Return) == E_KeyState::Pressed)
+	{
+		for (OscillatorParameters& osc : m_SynthParameters.oscillators)
+		{
+			osc.usePolyBlep = !osc.usePolyBlep;
+		}
+		LOG("PolyBlep " + std::string(m_SynthParameters.oscillators[0].usePolyBlep ? "on" : "off"));
 	}
 }
 
@@ -381,23 +391,7 @@ void Synthesizer::SetOscillatorMode(uint8 const oscIdx, float const value)
 		}
 
 		// log the new type
-		std::string patternString;
-		switch (newPattern)
-		{
-		case E_PatternType::Sine:
-			patternString = "Sine Wave";
-			break;
-		case E_PatternType::Square:
-			patternString = "Square Wave";
-			break;
-		case E_PatternType::Saw:
-			patternString = "Saw Wave";
-			break;
-		case E_PatternType::Triangle:
-			patternString = "Triangle Wave";
-			break;
-		}
-		LOG("Synthesizer::SetOscillatorMode > Oscillator #" + std::to_string(oscIdx) + std::string(" set to: ") + patternString);
+		LOG("Synthesizer::SetOscillatorMode > Oscillator #" + std::to_string(oscIdx) + std::string(" set to: ") + GetPatternName(newPattern));
 	}
 }
 

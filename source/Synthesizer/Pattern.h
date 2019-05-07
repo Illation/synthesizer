@@ -1,7 +1,7 @@
 #pragma once
 
 //---------------------------------
-// I_PatternFunction
+// I_WavePattern
 //
 // Interface for a class with a function that turns a phase into a signal between 0 and 1
 //
@@ -62,6 +62,10 @@ public:
 	void SetPulseWidth(float const val) { m_PulseWidth = val; }
 
 private:
+
+	// Data
+	///////
+
 	float m_PulseWidth = 0.5f;
 };
 
@@ -95,6 +99,10 @@ public:
 	void SetAlpha(float const val) { m_Alpha = val; }
 
 private:
+
+	// Data
+	///////
+
 	std::unique_ptr<I_WavePattern> m_PatternA;
 	std::unique_ptr<I_WavePattern> m_PatternB;
 	float m_Alpha = 0.5f;

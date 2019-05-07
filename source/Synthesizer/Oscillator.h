@@ -16,6 +16,8 @@ enum class E_PatternType : uint8
 	COUNT
 };
 
+std::string GetPatternName(E_PatternType const patternType);
+
 //---------------------------------
 // OscillatorParameters
 //
@@ -26,6 +28,7 @@ struct OscillatorParameters
 	float level = 1.f;
 	float frequencyMultiplier = 1.f;
 	E_PatternType patternType = E_PatternType::Sine;
+	bool usePolyBlep = true;
 };
 
 //---------------------------------
@@ -45,6 +48,12 @@ public:
 	float GetLevel() const { return m_Parameters.level; }
 
 private:
+
+	float GetPolyBlep(float const deltaPhase, float const phase) const;
+
+	// Data
+	///////
+
 	float m_Phase = 0.0;
 	double m_Frequency;  // we store this as a double to avoid casting at runtime
 	std::unique_ptr<I_WavePattern> m_Pattern;
