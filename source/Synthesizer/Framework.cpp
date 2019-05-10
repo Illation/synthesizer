@@ -3,6 +3,7 @@
 
 #include <portaudio.h>
 #include <Vendor/RtMidi.h>
+#include <Vendor/RtAudio.h>
 
 #include <gtk/gtk.h>
 
@@ -173,6 +174,43 @@ bool Framework::InitializeAudio()
 
 	LOG("");
 
+	// Initialize RtAudio
+	///////////////////////
+
+	m_Audio = new RtAudio(); // we could specify the library here
+	if (m_Audio == nullptr)
+	{
+		LOG("Framework::InitializeAudio > Failed to initialize RT Audio!", Warning);
+		return false;
+	}
+
+	LOG("RtAudio version: " + m_Audio->getVersion());
+	LOG("RtAudio API: " + RtAudio::getApiDisplayName(m_Audio->getCurrentApi()));
+
+	// Determine the number of devices available
+	unsigned int deviceCount = m_Audio->getDeviceCount();
+	if (deviceCount == 0)
+	{
+		LOG("Framework::InitializeAudio > No sound device found!", Warning);
+		return false;
+	}
+
+	LOG("There are '" + std::to_string(deviceCount) + std::string("' audio devices available."));
+
+	// Scan through devices for various capabilities
+	for (uint32 deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++)
+	{
+		RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(deviceIdx);
+		if (info.probed == true) 
+		{
+			LOG("\t Device #" + std::to_string(deviceIdx) + std::string(": '") + info.name + std::string("'"));
+		}
+	}
+
+	uint32 defaultDeviceIdx = m_Audio->getDefaultOutputDevice();
+	LOG("Default device index: '" + std::to_string(defaultDeviceIdx) + std::string("'"));
+
+	LOG("");
 
 	// Initialize portaudio
 	///////////////////////
@@ -292,6 +330,8 @@ void Framework::TerminateAudio()
 	{
 		LogPortAudioError(err);
 	}
+
+	SafeDelete(m_Audio);
 
 	SafeDelete(m_MidiInput);
 	MidiManager::GetInstance()->DestroyInstance();

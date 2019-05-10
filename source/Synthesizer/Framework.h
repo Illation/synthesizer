@@ -11,6 +11,8 @@ typedef int PaError;
 class RtMidiIn;
 class RtMidiError;
 
+class RtAudio;
+
 //---------------------------------
 // CommandlineArguments
 //
@@ -63,6 +65,9 @@ private:
 
 	// MIDI input
 	RtMidiIn *m_MidiInput;
+
+	// RT audio
+	RtAudio* m_Audio;
 
 	// Portaudio stream
 	PaStream *m_PaStream;	// Will become invalid after TerminateAudio is called

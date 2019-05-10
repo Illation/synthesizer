@@ -31,7 +31,7 @@ The final executable will appear in **bin/[configuration]_[platform]/Synthesizer
 
 ## Third Party
 
-This project uses PortAudio, RtMIDI and GTK 3+, here are the licenses for them:
+This project uses PortAudio, RtMIDI, RtAudio and GTK 3+, here are the licenses for them:
 
 #### Portaudio
 
@@ -45,7 +45,7 @@ This project uses PortAudio, RtMIDI and GTK 3+, here are the licenses for them:
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#### RtMidi
+#### RtMidi and RtAudio
 
 	RtMidi: realtime MIDI i/o C++ classes<BR>
 	Copyright (c) 2003-2019 Gary P. Scavone

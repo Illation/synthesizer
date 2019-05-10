@@ -9,6 +9,8 @@
 //
 void MidiManager::HandleMidiMessage(double const dt, std::vector<uint8> const& message)
 {
+	UNUSED(dt);
+
 	// no need to handle empty messages
 	if (message.size() == 0)
 	{

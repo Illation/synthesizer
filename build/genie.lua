@@ -73,7 +73,11 @@ configuration "Shipping"
 configuration "vs*"
 	flags { "NoIncrementalLink", "NoEditAndContinue" }
 	linkoptions { "/ignore:4221" }
-	defines { "PLATFORM_Win", "__WINDOWS_MM__" }
+	defines { 
+		"PLATFORM_Win", 
+		"__WINDOWS_DS__", "__WINDOWS_ASIO__", "__WINDOWS_WASAPI__", -- RtAudio
+		"__WINDOWS_MM__"											-- RtMidi
+		}
 	includedirs { 
 		path.join(DEP_INCLUDE, "portaudio"),
 		path.join(DEP_INCLUDE, "gtk")
@@ -122,7 +126,10 @@ project "Synthesizer"
 
 	configuration "vs*"
 		flags { "Winmain" }
-		links { "winmm" } -- rtMidi on windows
+		links { 
+			"dsound", --rtAudio 
+			"winmm" -- rtMidi on windows
+		} 
 
 	platformLibraries()
 	windowsPlatformPostBuild()
