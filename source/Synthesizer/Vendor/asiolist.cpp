@@ -1,3 +1,7 @@
+//Manual Changes
+#pragma warning(push, 0)  
+//End manual changes
+
 #include <windows.h>
 #include "iasiodrv.h"
 #include "asiolist.h"
@@ -306,3 +310,6 @@ LONG AsioDriverList::asioGetDriverCLSID (int drvID,CLSID *clsid)
 }
 
 
+//Manual Changes
+#pragma warning(pop)  
+//End manual changes

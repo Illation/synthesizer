@@ -29,7 +29,7 @@ function outputDirectories(_project)
 	for i = 1, #cfgs do
 		for j = 1, #p do
 			configuration { cfgs[i], p[j] }
-				targetdir("../bin/" .. cfgs[i] .. "_" .. p[j] .. "/" .. _project)
+				targetdir("../bin/" .. cfgs[i] .. "_" .. p[j] .. "/" .. "bin")
 				--seems like the platform will automatically be added
 				objdir("../synthesizer/build/Intermediate/" .. cfgs[i]  .. "/" .. _project)		
 		end
@@ -44,7 +44,7 @@ function platformLibraries()
 		local depPf = path.join(DEP_DIR, p[j] .. "/") 
 
 		configuration { "vs*", p[j] }
-			libdirs { path.join(depPf, "portaudio"),path.join(depPf, "gtk") }
+			libdirs { path.join(depPf, "gtk") }
 	end
 	configuration {}
 end
@@ -79,7 +79,6 @@ configuration "vs*"
 		"__WINDOWS_MM__"											-- RtMidi
 		}
 	includedirs { 
-		path.join(DEP_INCLUDE, "portaudio"),
 		path.join(DEP_INCLUDE, "gtk")
 	}
 	debugdir "$(OutDir)"
@@ -135,9 +134,9 @@ project "Synthesizer"
 	windowsPlatformPostBuild()
 
 	--Linked libraries
-    links{ "portaudio"
+    links{ 
 	-- everything from here is gtk dependancies
-		, "atk-1.0" 
+		"atk-1.0" 
 		, "bz2" 
 		, "cairo" 
 		, "cairo-gobject" 

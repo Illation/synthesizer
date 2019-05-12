@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Framework.h"
 
-#include <portaudio.h>
 #include <Vendor/RtMidi.h>
 #include <Vendor/RtAudio.h>
 
@@ -92,7 +91,7 @@ void Framework::InitializeUtilities()
 //---------------------------------
 // Framework::InitializeAudio
 //
-// Initialize portaudio library, create a stream and start listening for MIDI messages
+// Initialize RtAudio library, create a stream and start listening for MIDI messages
 //
 bool Framework::InitializeAudio()
 {
@@ -174,6 +173,11 @@ bool Framework::InitializeAudio()
 
 	LOG("");
 
+	// Initialize Synth
+	///////////////////////
+
+	m_Synthesizer->Initialize();
+
 	// Initialize RtAudio
 	///////////////////////
 
@@ -207,100 +211,82 @@ bool Framework::InitializeAudio()
 		}
 	}
 
+	// settings for our audio stream
 	uint32 defaultDeviceIdx = m_Audio->getDefaultOutputDevice();
 	LOG("Default device index: '" + std::to_string(defaultDeviceIdx) + std::string("'"));
 
-	LOG("");
+	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
 
-	// Initialize portaudio
-	///////////////////////
-	PaError err = Pa_Initialize();
-	if (err != paNoError)
+	RtAudio::StreamParameters parameters;
+	parameters.deviceId = defaultDeviceIdx;
+	parameters.nChannels = output.Channels;
+
+	RtAudio::StreamOptions options;
+	options.flags |= RTAUDIO_MINIMIZE_LATENCY;
+	if (false)
 	{
-		LogPortAudioError(err);
-		return false;
+		options.flags |= RTAUDIO_NONINTERLEAVED;
 	}
-
-	// Get number of soundcards from portaudio, print any errors
-	LOG("PortAudio version: " + std::string(Pa_GetVersionText()));
-	LOG("");
-	int numDevices;
-	numDevices = Pa_GetDeviceCount();
-	if (numDevices == 0)
+	if (false) // exclusive device access
 	{
-		LOG("Framework::InitializeAudio > No soundcard found!", Warning);
-		return false;
+		options.flags |= RTAUDIO_HOG_DEVICE;
 	}
-	if (numDevices < 0)
+	if (false) // some scheduling stuff I don't understand quite yet
 	{
-		LOG("Framework::InitializeAudio > Pa_CountDevices returned 0x" + std::to_string(numDevices), Warning);
-		err = numDevices;
-		LogPortAudioError(err);
-		return false;
+		options.flags |= RTAUDIO_SCHEDULE_REALTIME;
+		options.priority = 900000000;
 	}
-
-	// Enumerate Soundcards and log them
-	LOG("Sound devices detected by port audio:");
-	for (int32 i = 0; i < numDevices; i++)
+	if (m_Audio->getCurrentApi() == RtAudio::LINUX_ALSA)
 	{
-		PaDeviceInfo const* deviceInfo = Pa_GetDeviceInfo(i);
-		PaHostApiInfo const* hostApi = Pa_GetHostApiInfo(deviceInfo->hostApi);
-		LOG("\t" + std::string(deviceInfo->name) + std::string(" - hostApi: ") + std::string(hostApi->name));
+		options.flags |= RTAUDIO_ALSA_USE_DEFAULT;
 	}
+	options.streamName = "Synthesizer";
+	options.numberOfBuffers = 0; // as low as possible
 
-	// The callback function called when our stream requests more data
-	auto onPortAudioCallback = [](
-		const void *inputBuffer, void *outputBuffer,
-		unsigned long framesPerBuffer,
-		const PaStreamCallbackTimeInfo* timeInfo,
-		PaStreamCallbackFlags statusFlags,
-		void *userData)
+	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
+
+	// run rtAudio errors through our logging system
+	auto onRtAudioError = [](RtAudioError::Type type, std::string const& errorText)
 	{
-		UNUSED(inputBuffer);
-		UNUSED(statusFlags);
-		UNUSED(timeInfo);
-
-		int16* out = static_cast<int16*>(outputBuffer);
-		Synthesizer* synth = static_cast<Synthesizer*>(userData);
-
-		static float const s_maxInt16 = static_cast<float>(std::numeric_limits<int16>::max());
-		for (uint32 i = 0; i < framesPerBuffer; i++)
+		LogLevel logLevel = LogLevel::Error;
+		switch (type)
 		{
-			std::vector<float> channels = synth->GetSample();
-			for (float const channel : channels)
-			{
-				*out++ = static_cast<int16>(channel * s_maxInt16);
-			}
+		case RtAudioError::WARNING:
+		case RtAudioError::DEBUG_WARNING:
+		case RtAudioError::UNSPECIFIED:
+		case RtAudioError::NO_DEVICES_FOUND:
+			logLevel = LogLevel::Warning;
 		}
 
-		return static_cast<int>(PaStreamCallbackResult::paContinue);
+		LOG(errorText, logLevel);
 	};
 
-	// Open an audio I/O stream. 2nd param is input channel num, 3rd is output channels, i.e stereo
-	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
-	err = Pa_OpenDefaultStream(&m_PaStream, 
-		0, // no input channels
-		output.Channels, 
-		paInt16,
-		output.SampleRate,
-		output.FramesPerBuffer, 
-		onPortAudioCallback, 
-		m_Synthesizer.get());
-	if (err != paNoError)
+	// open a stream with all our settings
+	try 
 	{
-		LogPortAudioError(err);
+		m_Audio->openStream( &parameters, 
+			nullptr, 
+			RTAUDIO_SINT16,
+			output.SampleRate * output.Channels,
+			&framesPerBuffer,
+			&Framework::AudioCallback<int16>,
+			m_Synthesizer.get(), 
+			&options,
+			onRtAudioError);
+	}
+	catch (RtAudioError& error) 
+	{
+		onRtAudioError(error.getType(), error.getMessage());
 		return false;
 	}
 
-	// Start playing right away
-	err = Pa_StartStream(m_PaStream);
-	if (err != paNoError)
-	{
-		LogPortAudioError(err);
-		return false;
-	}
+	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
+	LOG("\tNumber of buffers in this stream: '" + std::to_string(options.numberOfBuffers) + std::string("'"));
+	LOG("\tStream callbackFn priority: '" + std::to_string(options.priority) + std::string("'"));
 
-	m_Synthesizer->Initialize();
+	m_Audio->startStream();
+
+	LOG("");
 
 	// Succesfully initialized sound
 	return true;
@@ -313,38 +299,17 @@ bool Framework::InitializeAudio()
 //
 void Framework::TerminateAudio()
 {
-	PaError err = Pa_StopStream(m_PaStream);
-	if (err != paNoError)
-	{
-		LogPortAudioError(err);
-	}
+	m_Audio->stopStream();
 
-	err = Pa_CloseStream(m_PaStream);
-	if (err != paNoError)
+	if (m_Audio->isStreamOpen())
 	{
-		LogPortAudioError(err);
-	}
-
-	err = Pa_Terminate();
-	if (err != paNoError)
-	{
-		LogPortAudioError(err);
+		m_Audio->closeStream();
 	}
 
 	SafeDelete(m_Audio);
 
 	SafeDelete(m_MidiInput);
 	MidiManager::GetInstance()->DestroyInstance();
-}
-
-//---------------------------------
-// Framework::LogPortAudioError
-//
-// Print port audio error to log
-//
-void Framework::LogPortAudioError(PaError err)
-{
-	LOG("Framework::LogPortAudioError > " + std::string(Pa_GetErrorText(err)), Warning);
 }
 
 //---------------------------------
@@ -381,7 +346,7 @@ void Framework::InitializeGTK()
 		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
 		return FALSE;
 	};
-	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyPressedCallback), NULL);
+	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyPressedCallback), nullptr);
 
 	// on release
 	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
@@ -393,7 +358,7 @@ void Framework::InitializeGTK()
 		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
 		return FALSE;
 	};
-	g_signal_connect(G_OBJECT(window), "key_release_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), NULL);
+	g_signal_connect(G_OBJECT(window), "key_release_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), nullptr);
 
 	//show all the widgets
 	gtk_widget_show_all(window);

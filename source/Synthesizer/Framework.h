@@ -5,13 +5,9 @@
 #include "Synthesizer.h"
 
 // forward declarations
-typedef void PaStream;
-typedef int PaError;
-
 class RtMidiIn;
-class RtMidiError;
-
 class RtAudio;
+typedef unsigned int RtAudioStreamStatus;
 
 //---------------------------------
 // CommandlineArguments
@@ -40,14 +36,15 @@ public:
 
 	void Run();
 
+	template<typename T>
+	static int32 AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData);
+
 private:
 	void InitializeUtilities();
 
 	// Audio
 	bool InitializeAudio(); // returns false if something went wrong
 	void TerminateAudio();
-
-	void LogPortAudioError(PaError err);
 
 	// UI
 	void InitializeGTK();
@@ -68,7 +65,6 @@ private:
 
 	// RT audio
 	RtAudio* m_Audio;
-
-	// Portaudio stream
-	PaStream *m_PaStream;	// Will become invalid after TerminateAudio is called
 };
+
+#include "Framework.inl"

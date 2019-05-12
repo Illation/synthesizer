@@ -1,3 +1,7 @@
+//Manual Changes
+#pragma warning(push, 0)  
+//End manual changes
+
 /************************************************************************/
 /*! \class RtAudio
     \brief Realtime audio i/o C++ classes.
@@ -10634,3 +10638,8 @@ void RtApi :: byteSwapBuffer( char *buffer, unsigned int samples, RtAudioFormat 
   //
   // vim: et sts=2 sw=2
 
+
+
+//Manual Changes
+#pragma warning(pop)  
+//End manual changes

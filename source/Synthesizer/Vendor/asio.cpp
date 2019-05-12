@@ -1,3 +1,7 @@
+//Manual Changes
+#pragma warning(push, 0)  
+//End manual changes
+
 /*
 	Steinberg Audio Stream I/O API
 	(c) 1996, Steinberg Soft- und Hardware GmbH
@@ -255,3 +259,9 @@ ASIOError ASIOOutputReady(void)
 #endif
 
 
+
+
+
+//Manual Changes
+#pragma warning(pop)  
+//End manual changes
