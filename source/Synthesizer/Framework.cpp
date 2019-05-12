@@ -7,7 +7,10 @@
 #pragma warning( push )
 #pragma warning( disable : 4244 ) // glib warnings
 #include <glibmm/main.h>
+#include <giomm/applicationcommandline.h>
 #pragma warning( pop )
+
+#include <UI/FrameworkWindow.h>
 
 #include <Helper/Commands.h>
 #include <Helper/InputManager.h>
@@ -15,13 +18,19 @@
 #include "Config.h"
 #include "MidiManager.h"
 
+
+//====================
+// Framework 
+//====================
+
 //---------------------------------
 // Framework::Framework
 //
 // Framework constructor
 //
-Framework::Framework(CommandlineArguments const& args)
-	: m_CmdArguments(args)
+Framework::Framework()
+	: Gtk::Application("com.leah-lindner.synthesizer", Gio::APPLICATION_HANDLES_OPEN)
+	, m_CmdArguments(CommandlineArguments())
 	, m_Synthesizer(std::make_unique<Synthesizer>())
 { 
 	Logger::Initialize();//Init logger first because all output depends on it from the start
@@ -30,11 +39,30 @@ Framework::Framework(CommandlineArguments const& args)
 #endif
 	InitializeUtilities();
 
-	InitializeGTK();
-
-	if (InitializeAudio())
+	if (!InitializeAudio())
 	{
+		LOG("Framework::Framework > Failed to initialize audio!", Warning);
 	}
+
+	// Allow updating every frame in a gameloop style - called as quickly as possible
+	Glib::signal_idle().connect(sigc::mem_fun(*this, &Framework::OnTick));
+
+	// Initialize commandline arguments for later
+	auto onCommandLine = [this](const Glib::RefPtr<Gio::ApplicationCommandLine>& command_line) -> int32
+	{
+		int argc;
+		char **argv = command_line->get_arguments(argc);
+		m_CmdArguments = CommandlineArguments(argc, argv);
+		return 0;
+	};
+	signal_command_line().connect(onCommandLine, false);
+
+	// when we press close the last window
+	signal_shutdown().connect(
+		[this]()
+	{
+		InputManager::GetInstance()->Quit();
+	});
 }
 
 //---------------------------------
@@ -44,12 +72,102 @@ Framework::Framework(CommandlineArguments const& args)
 //
 Framework::~Framework()
 {
+	TerminateAudio();
+
 	Time::GetInstance()->DestroyInstance();
 	PerformanceInfo::GetInstance()->DestroyInstance();
 	InputManager::GetInstance()->DestroyInstance();
 	Config::GetInstance()->DestroyInstance();
 
 	Logger::Release();
+}
+
+//---------------------------------
+// Framework::create
+//
+// Framework creation factory
+//
+Glib::RefPtr<Framework> Framework::create()
+{
+	return Glib::RefPtr<Framework>(new Framework());
+}
+
+//---------------------------------
+// Framework::CreateFrameworkWindow
+//
+// Create the main window for the framework
+//
+FrameworkWindow* Framework::CreateFrameworkWindow()
+{
+	auto appwindow = new FrameworkWindow();
+
+	// Make sure that the application runs for as long this window is still open.
+	add_window(*appwindow);
+
+	// Gtk::Application::add_window() connects a signal handler to the window's
+	// signal_hide(). That handler removes the window from the application.
+	// If it's the last window to be removed, the application stops running.
+	// Gtk::Window::set_application() does not connect a signal handler, but is
+	// otherwise equivalent to Gtk::Application::add_window().
+
+	// Delete the window when it is hidden.
+	appwindow->signal_hide().connect(sigc::bind<Gtk::Window*>(sigc::mem_fun(*this, &Framework::OnHideWindow), appwindow));
+
+	return appwindow;
+}
+
+//---------------------------------
+// Framework::OnHideWindow
+//
+// Hiding a window will make us delete it
+//
+void Framework::OnHideWindow(Gtk::Window* window)
+{
+	delete window;
+}
+
+//---------------------------------
+// Framework::on_activate
+//
+// When the Gtk::Application gets activated we create a window and present it
+//
+void Framework::on_activate()
+{
+	// The application has been started, so let's show a window.
+	auto appwindow = CreateFrameworkWindow();
+	appwindow->present();
+}
+
+//---------------------------------
+// Framework::on_open
+//
+// The application has been asked to open some files,
+// so let's open a new view for each one.
+//
+void Framework::on_open(Gio::Application::type_vec_files const& files, Glib::ustring const& hint)
+{
+	UNUSED(hint);
+
+	// Make sure we have a window to open the files in
+	FrameworkWindow* appwindow = nullptr;
+	std::vector<Gtk::Window *> windows = get_windows();
+	if (windows.size() > 0)
+	{
+		appwindow = dynamic_cast<FrameworkWindow*>(windows[0]);
+	}
+
+	if (!appwindow)
+	{
+		appwindow = CreateFrameworkWindow();
+	}
+
+	// open those files
+	for (Glib::RefPtr<Gio::File> const& file : files)
+	{
+		appwindow->OpenFileView(file);
+	}
+
+	appwindow->present();
 }
 
 //---------------------------------
@@ -91,7 +209,7 @@ bool Framework::InitializeAudio()
 	//////////////
 
 	// run rtMidi errors through our logging system
-	auto onRtMidiError = [](RtMidiError::Type type, const std::string &errorText, void* userData)
+	auto onRtMidiError = [](RtMidiError::Type type, std::string const&errorText, void* userData)
 	{
 		UNUSED(userData);
 
@@ -303,49 +421,6 @@ void Framework::TerminateAudio()
 
 	SafeDelete(m_MidiInput);
 	MidiManager::GetInstance()->DestroyInstance();
-}
-
-//---------------------------------
-// Framework::InitializeGTK
-//
-// Initialize GTK library, open a window
-//
-void Framework::InitializeGTK()
-{
-	set_border_width(10);
-
-	// when we press quit
-	signal_delete_event().connect(
-		[this](GdkEventAny* any_event)
-		{
-			UNUSED(any_event);
-			InputManager::GetInstance()->Quit();
-			TerminateAudio();
-			return false;
-		});
-
-	// listen for keyboard input
-	// on press
-	auto keyPressedCallback = [](GdkEventKey* evnt) -> bool
-	{
-		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
-		return false;
-	};
-	signal_key_press_event().connect(keyPressedCallback, false);
-
-	// on release
-	auto keyReleasedCallback = [](GdkEventKey* evnt) -> bool
-	{
-		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
-		return false;
-	};
-	signal_key_release_event().connect(keyReleasedCallback, false);
-
-	// Allow updating every frame in a gameloop style - called as quickly as possible
-	Glib::signal_idle().connect(sigc::mem_fun(*this, &Framework::OnTick));
-
-	//show all the widgets
-	show_all_children();
 }
 
 //---------------------------------

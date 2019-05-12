@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Synthesizer
+GenericName=Synthesizer
+Comment=C++ synthesizer with RTAudio, RTMidi and GTKmm
+Icon=synthicon
+StartupNotify=true
+Exec=@bindir@/Synthesizer %U
+Categories=GNOME;GTK;Utility

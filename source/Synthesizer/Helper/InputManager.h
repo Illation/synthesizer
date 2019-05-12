@@ -29,6 +29,7 @@ public:
 private:
 	friend class Singleton<InputManager>;
 	friend class Framework;
+	friend class FrameworkWindow;
 
 	// Defualt constructor and destructor
 	InputManager() : m_KeyStates() {}

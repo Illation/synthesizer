@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Framework.h"
 
-#include <gtkmm/application.h>
+#include <glibmm/refptr.h>
 
 void SetDebuggingOptions();
 
@@ -9,11 +9,13 @@ int main(int argc, char *argv[])
 {
 	SetDebuggingOptions();
 
-	Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(argc, argv, "org.gtkmm.example");
+	Glib::RefPtr<Framework> framework = Framework::create();
 
-	Framework framework(CommandlineArguments(argc, argv));
-
-	return app->run(framework);
+	// Start the application, showing the initial window,
+	// and opening extra views for any files that it is asked to open,
+	// for instance as a command-line parameter.
+	// run() will return when the last window has been closed.
+	return framework->run(argc, argv);
 }
 
 void SetDebuggingOptions()

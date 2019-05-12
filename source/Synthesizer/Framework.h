@@ -4,12 +4,16 @@
 
 #include "Synthesizer.h"
 
-#include <gtkmm/window.h>
+#include <gtkmm/application.h>
+#include <glibmm/refptr.h>
+#include <glibmm/ustring.h>
 
 // forward declarations
 class RtMidiIn;
 class RtAudio;
 typedef unsigned int RtAudioStreamStatus;
+
+class FrameworkWindow;
 
 //---------------------------------
 // CommandlineArguments
@@ -30,11 +34,24 @@ struct CommandlineArguments
 //
 // Main class for this project
 //
-class Framework final : public Gtk::Window
+class Framework final : public Gtk::Application 
 {
+protected:
+	Framework();
+	virtual ~Framework();
+
 public:
-	Framework(CommandlineArguments const& args = CommandlineArguments());
-	~Framework();
+	static Glib::RefPtr<Framework> create();
+
+private:
+	FrameworkWindow* CreateFrameworkWindow();
+	void OnHideWindow(Gtk::Window* window);
+
+protected:
+	// Override default gtkmm application signal handlers:
+	void on_activate() override;
+	void on_open(Gio::Application::type_vec_files const& files, Glib::ustring const& hint) override;
+public:
 
 	template<typename T>
 	static int32 AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData);
@@ -45,9 +62,6 @@ private:
 	// Audio
 	bool InitializeAudio(); // returns false if something went wrong
 	void TerminateAudio();
-
-	// UI
-	void InitializeGTK();
 
 	// Runtime
 	bool OnTick();
@@ -61,7 +75,6 @@ private:
 
 	// MIDI input
 	RtMidiIn *m_MidiInput;
-
 	// RT audio
 	RtAudio* m_Audio;
 };
