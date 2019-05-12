@@ -1,17 +1,19 @@
 #include "stdafx.h"
 #include "Framework.h"
 
+#include <gtkmm/application.h>
+
 void SetDebuggingOptions();
 
 int main(int argc, char *argv[])
 {
 	SetDebuggingOptions();
 
-	Framework* framework = new Framework(CommandlineArguments(argc, argv));
-	framework->Run();
-	delete framework;
+	Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(argc, argv, "org.gtkmm.example");
 
-	return 0;
+	Framework framework(CommandlineArguments(argc, argv));
+
+	return app->run(framework);
 }
 
 void SetDebuggingOptions()

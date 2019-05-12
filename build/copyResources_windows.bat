@@ -16,16 +16,11 @@ IF [%4] == [] (
 ECHO Source Directory: %SOURCE_DIR% ; Output Directory: %OUT_DIR% ; Platform: %PLATFORM% ; copy_dlls? %COPY_DLLS%
 
 IF "%COPY_DLLS%" == "true" (
-	copy "%SOURCE_DIR%\..\dependancies\%PLATFORM%\gtk\*.dll" "%OUT_DIR%\" /y /D
-	IF "%PLATFORM%" == "x32" (
-		copy "%SOURCE_DIR%\..\dependancies\%PLATFORM%\portaudio\portaudio_x86.dll" "%OUT_DIR%\portaudio_x86.dll" /y /D
-	) ELSE (
-		copy "%SOURCE_DIR%\..\dependancies\%PLATFORM%\portaudio\portaudio_x64.dll" "%OUT_DIR%\portaudio_x64.dll" /y /D
-	)
+	copy "%SOURCE_DIR%\..\dependancies\%PLATFORM%\gtkmm\*.dll" "%OUT_DIR%\" /y /D
 )
 
 REM xcopy "%SOURCE_DIR%\Synthesizer\Resources" "%OUT_DIR%\Resources" /s/i/y/d
-xcopy "%SOURCE_DIR%\Synthesizer\Config" "%OUT_DIR%" /s/i/y/d
+xcopy "%SOURCE_DIR%\Synthesizer\Config" "%OUT_DIR%\..\config" /s/i/y/d
 
 rem copy gtk resources
 xcopy "%SOURCE_DIR%\Synthesizer\Resources\share" "%OUT_DIR%\..\share" /s/i/y/d

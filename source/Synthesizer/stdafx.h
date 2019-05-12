@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma warning( disable : 4250 ) // inherit via dominance
+
 #define NOMINMAX
 
 #pragma region

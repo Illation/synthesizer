@@ -25,7 +25,7 @@ void Config::Initialize()
 void Config::LoadFromJSON()
 {
 	// Open the json file
-	File* jsonFile = new File("./config.json", nullptr);
+	File* jsonFile = new File("../config/config.json", nullptr);
 	if (!jsonFile->Open(FILE_ACCESS_MODE::Read))
 		return;
 

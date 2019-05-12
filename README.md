@@ -33,7 +33,7 @@ Adjacent to the internal bin folder there will be share and lib folders where th
 
 ## Third Party
 
-This project uses RtMIDI, RtAudio, GTK 3+ and the "Sweet" theme for GTK, here are the licenses for them:
+This project uses RtMIDI, RtAudio, GTKmm and the "Sweet" theme for GTK, here are the licenses for them:
 
 ### RtMidi and RtAudio
 
@@ -43,8 +43,6 @@ RtAudio is licensed with the [MIT license](http://www.music.mcgill.ca/~gary/rtau
 
 ### GTK
 
-GTK is licensed under [GNU LGPL 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html) 
-
-#### Sweet GTK theme
+GTKmm is licensed under [GNU LGPL](https://www.gtkmm.org/en/license.html) 
 
 Sweet is licensed under [GNU General Public License v3.0](https://github.com/EliverLara/Sweet/blob/master/LICENSE)

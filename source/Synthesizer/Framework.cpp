@@ -4,7 +4,10 @@
 #include <Vendor/RtMidi.h>
 #include <Vendor/RtAudio.h>
 
-#include <gtk/gtk.h>
+#pragma warning( push )
+#pragma warning( disable : 4244 ) // glib warnings
+#include <glibmm/main.h>
+#pragma warning( pop )
 
 #include <Helper/Commands.h>
 #include <Helper/InputManager.h>
@@ -20,7 +23,19 @@
 Framework::Framework(CommandlineArguments const& args)
 	: m_CmdArguments(args)
 	, m_Synthesizer(std::make_unique<Synthesizer>())
-{ }
+{ 
+	Logger::Initialize();//Init logger first because all output depends on it from the start
+#ifndef SHIPPING
+	DebugCopyResourceFiles();
+#endif
+	InitializeUtilities();
+
+	InitializeGTK();
+
+	if (InitializeAudio())
+	{
+	}
+}
 
 //---------------------------------
 // Framework::~Framework
@@ -29,35 +44,12 @@ Framework::Framework(CommandlineArguments const& args)
 //
 Framework::~Framework()
 {
-	TerminateAudio();
-
 	Time::GetInstance()->DestroyInstance();
 	PerformanceInfo::GetInstance()->DestroyInstance();
 	InputManager::GetInstance()->DestroyInstance();
 	Config::GetInstance()->DestroyInstance();
 
 	Logger::Release();
-}
-
-//---------------------------------
-// Framework::~Framework
-//
-// High level of what happens when running the game
-//
-void Framework::Run()
-{
-	Logger::Initialize();//Init logger first because all output depends on it from the start
-#ifndef SHIPPING
-	DebugCopyResourceFiles();
-#endif
-	InitializeUtilities();
-
-	if (InitializeAudio())
-	{
-		InitializeGTK();
-
-		Loop();
-	}
 }
 
 //---------------------------------
@@ -219,6 +211,7 @@ bool Framework::InitializeAudio()
 
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = defaultDeviceIdx;
+	//parameters.deviceId = 2;
 	parameters.nChannels = output.Channels;
 
 	RtAudio::StreamOptions options;
@@ -319,83 +312,63 @@ void Framework::TerminateAudio()
 //
 void Framework::InitializeGTK()
 {
-	// init library
-	gtk_init(&m_CmdArguments.argumentCount, &m_CmdArguments.argumentValues);
+	set_border_width(10);
 
-	// create window
-	GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-	typedef void(*T_QuitLambdaType)(void);
-	auto quitCallback = []()
-	{
-		InputManager::GetInstance()->Quit();
-		gtk_main_quit();
-	};
-	g_signal_connect(window, "destroy", G_CALLBACK((T_QuitLambdaType)quitCallback), nullptr);
+	// when we press quit
+	signal_delete_event().connect(
+		[this](GdkEventAny* any_event)
+		{
+			UNUSED(any_event);
+			InputManager::GetInstance()->Quit();
+			TerminateAudio();
+			return false;
+		});
 
 	// listen for keyboard input
 	// on press
-	typedef gboolean(*T_KeyLambdaType)(GtkWidget*, GdkEventKey*, gpointer);
-
-	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
-	auto keyPressedCallback = [](GtkWidget* widget, GdkEventKey* evnt, gpointer data) -> gboolean
+	auto keyPressedCallback = [](GdkEventKey* evnt) -> bool
 	{
-		UNUSED(data);
-		UNUSED(widget);
-
 		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
-		return FALSE;
+		return false;
 	};
-	g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK((T_KeyLambdaType)keyPressedCallback), nullptr);
+	signal_key_press_event().connect(keyPressedCallback, false);
 
 	// on release
-	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
-	auto keyReleasedCallback = [](GtkWidget* widget, GdkEventKey* evnt, gpointer data) -> gboolean
+	auto keyReleasedCallback = [](GdkEventKey* evnt) -> bool
 	{
-		UNUSED(data);
-		UNUSED(widget);
-
 		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
-		return FALSE;
+		return false;
 	};
-	g_signal_connect(G_OBJECT(window), "key_release_event", G_CALLBACK((T_KeyLambdaType)keyReleasedCallback), nullptr);
+	signal_key_release_event().connect(keyReleasedCallback, false);
+
+	// Allow updating every frame in a gameloop style - called as quickly as possible
+	Glib::signal_idle().connect(sigc::mem_fun(*this, &Framework::OnTick));
 
 	//show all the widgets
-	gtk_widget_show_all(window);
+	show_all_children();
 }
 
 //---------------------------------
-// Framework::Loop
-//
-// Keep doing this until the program ends
-//
-void Framework::Loop()
-{
-	while (InputManager::GetInstance()->IsRunning())
-	{
-		//******
-		//UPDATE
-		TIME->Update();
-		PERFORMANCE->StartFrameTimer();
-
-		// run gtk main loop
-		gtk_main_iteration_do(false);
-
-		Update();
-
-		// Update keystates
-		InputManager::GetInstance()->Update();
-
-		PERFORMANCE->Update();
-	}
-}
-
-//---------------------------------
-// Framework::Update
+// Framework::OnTick
 //
 // What do we want to do every cycle?
 //
-void Framework::Update()
+bool Framework::OnTick()
 {
+	if (!(InputManager::GetInstance()->IsRunning()))
+	{
+		return false;
+	}
+
+	TIME->Update();
+	PERFORMANCE->StartFrameTimer();
+
 	m_Synthesizer->Update();
+
+	// Update keystates
+	InputManager::GetInstance()->Update();
+
+	PERFORMANCE->Update();
+
+	return true; // we want to keep the callback alive
 }

@@ -44,7 +44,7 @@ function platformLibraries()
 		local depPf = path.join(DEP_DIR, p[j] .. "/") 
 
 		configuration { "vs*", p[j] }
-			libdirs { path.join(depPf, "gtk") }
+			libdirs { path.join(depPf, "gtkmm") }
 	end
 	configuration {}
 end
@@ -79,7 +79,7 @@ configuration "vs*"
 		"__WINDOWS_MM__"											-- RtMidi
 		}
 	includedirs { 
-		path.join(DEP_INCLUDE, "gtk")
+		path.join(DEP_INCLUDE, "gtkmm")
 	}
 	debugdir "$(OutDir)"
 configuration { "vs*", "x32" }
@@ -135,11 +135,13 @@ project "Synthesizer"
 
 	--Linked libraries
     links{ 
-	-- everything from here is gtk dependancies
+	-- everything from here is gtkmm dependancies
 		"atk-1.0" 
+		, "atkmm" 
 		, "bz2" 
 		, "cairo" 
 		, "cairo-gobject" 
+		, "cairomm-1.0" 
 		, "epoxy" 
 		, "expat" 
 		, "fontconfig" 
@@ -147,12 +149,16 @@ project "Synthesizer"
 		, "gailutil-3.0" 
 		, "gdk_pixbuf-2.0" 
 		, "gdk-3.0" 
+		, "gdkmm" 
 		, "gio-2.0" 
+		, "giomm" 
 		, "glib-2.0" 
+		, "glibmm" 
 		, "gmodule-2.0" 
 		, "gobject-2.0" 
 		, "gthread-2.0" 
 		, "gtk-3.0" 
+		, "gtkmm" 
 		, "harfbuzz" 
 		, "libcharset" 
 		, "libffi" 
@@ -162,6 +168,7 @@ project "Synthesizer"
 		, "pango-1.0" 
 		, "pangocairo-1.0" 
 		, "pangoft2-1.0" 
+		, "pangomm" 
 		, "pangowin32-1.0" 
 		, "pcre" 
 		, "pcre16" 
@@ -169,6 +176,7 @@ project "Synthesizer"
 		, "pcrecpp" 
 		, "pcreposix" 
 		, "pixman-1" 
+		, "sigc-2.0" 
 		, "zlib" 
 	}
 

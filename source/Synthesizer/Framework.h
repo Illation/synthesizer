@@ -4,6 +4,8 @@
 
 #include "Synthesizer.h"
 
+#include <gtkmm/window.h>
+
 // forward declarations
 class RtMidiIn;
 class RtAudio;
@@ -28,13 +30,11 @@ struct CommandlineArguments
 //
 // Main class for this project
 //
-class Framework final
+class Framework final : public Gtk::Window
 {
 public:
 	Framework(CommandlineArguments const& args = CommandlineArguments());
 	~Framework();
-
-	void Run();
 
 	template<typename T>
 	static int32 AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData);
@@ -50,8 +50,7 @@ private:
 	void InitializeGTK();
 
 	// Runtime
-	void Loop();
-	void Update();
+	bool OnTick();
 
 private:
 	// Data
