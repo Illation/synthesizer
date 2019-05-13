@@ -56,6 +56,8 @@ SettingsDialog* SettingsDialog::create(Gtk::Window& parent)
 	}
 	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_string(FileUtil::AsText(uiFile->Read()).c_str());
 	SafeDelete(uiFile);
+	
+	//Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/prefs.ui");
 
 	SettingsDialog* dialog = nullptr;
 	refBuilder->get_widget_derived("prefs_dialog", dialog);

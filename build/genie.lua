@@ -198,11 +198,12 @@ project "Synthesizer"
 		path.join(SOURCE_DIR, "Synthesizer/**.inl"), 
 		
 		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.c"), 
+		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.h"), 
 	}
 
 	nopch { 	
 		path.join(SOURCE_DIR, "Synthesizer/Vendor/**.cpp"), 
-		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/*.c"), 
+		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.c"), 
 	}	--vendor code shouldn't use precompiled headers
 
 	pchheader "stdafx.h"
