@@ -11,9 +11,13 @@
 #pragma warning( pop )
 
 #include <UI/FrameworkWindow.h>
+#include <UI/SettingsDialog.h>
 
 #include <Helper/Commands.h>
 #include <Helper/InputManager.h>
+
+#include <FileSystem/FileUtil.h>
+#include <FileSystem/Entry.h>
 
 #include "Config.h"
 #include "MidiManager.h"
@@ -99,7 +103,7 @@ Glib::RefPtr<Framework> Framework::create()
 //
 FrameworkWindow* Framework::CreateFrameworkWindow()
 {
-	auto appwindow = new FrameworkWindow();
+	FrameworkWindow* appwindow = FrameworkWindow::create();
 
 	// Make sure that the application runs for as long this window is still open.
 	add_window(*appwindow);
@@ -127,6 +131,57 @@ void Framework::OnHideWindow(Gtk::Window* window)
 }
 
 //---------------------------------
+// Framework::on_startup
+//
+// When the Gtk::Application gets activated we create a window and present it
+//
+void Framework::on_startup()
+{
+	// Call the base class's implementation.
+	Gtk::Application::on_startup();
+
+	// Add actions and keyboard accelerators for the application menu.
+	add_action("preferences", sigc::mem_fun(*this, &Framework::OnActionPreferences));
+	add_action("quit", sigc::mem_fun(*this, &Framework::OnActionQuit));
+	set_accel_for_action("app.quit", "<Ctrl>Q");
+
+	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create();
+	try
+	{
+		//refBuilder->add_from_resource("/com/leah-lindner/synthesizer/app_menu.ui");
+		// #todo: switch to using resources
+		File* uiFile = new File("../config/UI/app_menu.ui", nullptr);
+		if (!uiFile->Open(FILE_ACCESS_MODE::Read))
+		{
+			throw std::runtime_error("couldn't read window file");
+		}
+		std::string uiString = FileUtil::AsText(uiFile->Read());
+		refBuilder->add_from_string(uiString.c_str());
+		SafeDelete(uiFile);
+	}
+	catch (const Glib::Error& ex)
+	{
+		LOG("Framework::on_startup > " + std::string(ex.what()), LogLevel::Error);
+		return;
+	}
+	catch (std::exception const& ex)
+	{
+		LOG("Framework::on_startup > " + std::string(ex.what()), LogLevel::Error);
+		return;
+	}
+
+	auto app_menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(refBuilder->get_object("appmenu"));
+	if (app_menu)
+	{
+		set_app_menu(app_menu);
+	}
+	else
+	{
+		LOG("Framework::on_startup > No 'appmenu' object in app_menu.ui", LogLevel::Error);
+	}
+}
+
+//---------------------------------
 // Framework::on_activate
 //
 // When the Gtk::Application gets activated we create a window and present it
@@ -134,8 +189,22 @@ void Framework::OnHideWindow(Gtk::Window* window)
 void Framework::on_activate()
 {
 	// The application has been started, so let's show a window.
-	auto appwindow = CreateFrameworkWindow();
-	appwindow->present();
+	try
+	{
+		FrameworkWindow* appwindow = CreateFrameworkWindow();
+		appwindow->present();
+	}
+	// If create_appwindow() throws an exception (perhaps from Gtk::Builder),
+	// no window has been created, no window has been added to the application,
+	// and therefore the application will stop running.
+	catch (Glib::Error const& ex)
+	{
+		LOG("Framework::on_activate > " + std::string(ex.what()), LogLevel::Error);
+	}
+	catch (std::exception const& ex)
+	{
+		LOG("Framework::on_activate > " + std::string(ex.what()), LogLevel::Error);
+	}
 }
 
 //---------------------------------
@@ -156,18 +225,29 @@ void Framework::on_open(Gio::Application::type_vec_files const& files, Glib::ust
 		appwindow = dynamic_cast<FrameworkWindow*>(windows[0]);
 	}
 
-	if (!appwindow)
+	try
 	{
-		appwindow = CreateFrameworkWindow();
-	}
+		if (appwindow == nullptr)
+		{
+			appwindow = CreateFrameworkWindow();
+		}
 
-	// open those files
-	for (Glib::RefPtr<Gio::File> const& file : files)
+		// open those files
+		for (Glib::RefPtr<Gio::File> const& file : files)
+		{
+			appwindow->OpenFileView(file);
+		}
+
+		appwindow->present();
+	}
+	catch (Glib::Error const& ex)
 	{
-		appwindow->OpenFileView(file);
+		LOG("Framework::on_open > " + std::string(ex.what()), LogLevel::Error);
 	}
-
-	appwindow->present();
+	catch (std::exception const& ex)
+	{
+		LOG("Framework::on_open > " + std::string(ex.what()), LogLevel::Error);
+	}
 }
 
 //---------------------------------
@@ -446,4 +526,50 @@ bool Framework::OnTick()
 	PERFORMANCE->Update();
 
 	return true; // we want to keep the callback alive
+}
+
+//---------------------------------
+// Framework::OnActionPreferences
+//
+// On clicking the preferences button in the menu we show the SettingsDialog
+//
+void Framework::OnActionPreferences()
+{
+	try
+	{
+		SettingsDialog* prefs_dialog = SettingsDialog::create(*get_active_window());
+		prefs_dialog->present();
+
+		// Delete the dialog when it is hidden.
+		prefs_dialog->signal_hide().connect(sigc::bind<Gtk::Window*>(sigc::mem_fun(*this, &Framework::OnHideWindow), prefs_dialog));
+	}
+	catch (const Glib::Error& ex)
+	{
+		LOG("Framework::OnActionPreferences > " + std::string(ex.what()), LogLevel::Error);
+	}
+	catch (const std::exception& ex)
+	{
+		LOG("Framework::OnActionPreferences > " + std::string(ex.what()), LogLevel::Error);
+	}
+}
+
+//---------------------------------
+// Framework::OnActionQuit
+//
+// On clicking the quit button in the menu
+//
+void Framework::OnActionQuit()
+{
+	// Gio::Application::quit() will make Gio::Application::run() return,
+	// but it's a crude way of ending the program. The window is not removed
+	// from the application. Neither the window's nor the application's
+	// destructors will be called, because there will be remaining reference
+	// counts in both of them. If we want the destructors to be called, we
+	// must remove the window from the application. One way of doing this
+	// is to hide the window. See comment in CreateFrameworkWindow().
+	auto windows = get_windows();
+	for (auto window : windows)
+	{
+		window->hide();
+	}
 }

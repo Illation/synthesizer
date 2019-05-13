@@ -50,13 +50,16 @@ function platformLibraries()
 end
 
 --copy files that are specific for the platform being built for
-function windowsPlatformPostBuild()
+function windowsPlatformExtraBuildSteps()
 	local p = platforms()
 	for j = 1, #p do
-		local copyCmd = "$(SolutionDir)..\\build\\copyResources_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) " .. p[j] .. " true"
+		local copyCmd = "call $(SolutionDir)..\\build\\copyResources_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) " .. p[j] .. " true"
+		local schemaCmd = "call $(SolutionDir)..\\build\\compileSchemas_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) "
 
+		local compileCmd = "$(SolutionDir)..\\build\\compileResources_windows.bat " .. path.getabsolute(SOURCE_DIR)
 		configuration { "vs*", p[j] }
-			postbuildcommands { copyCmd } --copy dlls and resources after build
+			prebuildcommands { compileCmd }
+			postbuildcommands { schemaCmd .. ";\n", copyCmd } --copy dlls and resources after build
 	end
 	configuration {}
 end
@@ -104,6 +107,9 @@ project "General"
 	location "."
 	--specific files to avoid showing vs projects and solutions in build folder
 	files { 
+		path.join(PROJECT_DIR, "source/**.ui"), 
+		path.join(PROJECT_DIR, "source/**.gresource.xml"), 
+		path.join(PROJECT_DIR, "source/**.gschema.xml"), 
 		path.join(PROJECT_DIR, "build/*.bat"), 
 		path.join(PROJECT_DIR, "build/*.lua"), 
 		path.join(PROJECT_DIR, "build/.vahashtags"), --for visual assist
@@ -131,7 +137,7 @@ project "Synthesizer"
 		} 
 
 	platformLibraries()
-	windowsPlatformPostBuild()
+	windowsPlatformExtraBuildSteps()
 
 	--Linked libraries
     links{ 
@@ -190,10 +196,13 @@ project "Synthesizer"
 		path.join(SOURCE_DIR, "Synthesizer/**.hpp"), 
 		path.join(SOURCE_DIR, "Synthesizer/**.h"), 
 		path.join(SOURCE_DIR, "Synthesizer/**.inl"), 
+		
+		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.c"), 
 	}
 
 	nopch { 	
 		path.join(SOURCE_DIR, "Synthesizer/Vendor/**.cpp"), 
+		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/*.c"), 
 	}	--vendor code shouldn't use precompiled headers
 
 	pchheader "stdafx.h"

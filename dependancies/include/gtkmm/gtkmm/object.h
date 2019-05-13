@@ -44,6 +44,14 @@ T* manage(T* obj)
   return obj;
 }
 
+// begin local changes - this was missing
+template<class T, class... T_Args>
+auto make_managed(T_Args&&... args)
+{
+	return manage(new T(std::forward<T_Args>(args)...));
+}
+// end local changes
+
 /** Gtk::Object is the base class for all widgets, and for a few non-widget objects such as
  * Gtk::Adjustment. Gtk::Object predates Glib::Object; non-widgets that derive from Gtk::Object
  * rather than Glib::Object do so for backward compatibility reasons.

@@ -2,12 +2,17 @@
 #include "Framework.h"
 
 #include <glibmm/refptr.h>
+#include <glibmm/miscutils.h>
 
 void SetDebuggingOptions();
 
 int main(int argc, char *argv[])
 {
 	SetDebuggingOptions();
+
+	// Since this example is running uninstalled, we have to help it find its
+	// schema. This is *not* necessary in a properly installed application.
+	Glib::setenv("GSETTINGS_SCHEMA_DIR", ".", false);
 
 	Glib::RefPtr<Framework> framework = Framework::create();
 

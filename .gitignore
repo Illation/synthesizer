@@ -3,6 +3,7 @@
 Synthesizer.VC.*
 Synthesizer.VC.VC.opendb
 Synthesizer.VC.db
+/source/Synthesizer/UI/_generated
 /build/Intermediate
 /bin
 /build/x32

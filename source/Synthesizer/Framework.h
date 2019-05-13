@@ -49,6 +49,7 @@ private:
 
 protected:
 	// Override default gtkmm application signal handlers:
+	void on_startup() override;
 	void on_activate() override;
 	void on_open(Gio::Application::type_vec_files const& files, Glib::ustring const& hint) override;
 public:
@@ -65,6 +66,8 @@ private:
 
 	// Runtime
 	bool OnTick();
+	void OnActionPreferences();
+	void OnActionQuit();
 
 private:
 	// Data
