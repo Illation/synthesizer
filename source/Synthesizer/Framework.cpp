@@ -21,7 +21,11 @@
 
 #include "Config.h"
 #include "MidiManager.h"
+#include <glib/gerror.h>
 #include <glibmm/ustring.h>
+#include <gio/gresource.h>
+#include <giomm/resource.h>
+#include <glibmm/vectorutils.h>
 
 
 //====================
@@ -43,6 +47,32 @@ Framework::Framework()
 	DebugCopyResourceFiles();
 #endif
 	InitializeUtilities();
+
+	//std::string path("/com/leah-lindner/synthesizer/");
+
+	//GError* err = nullptr;
+	//char** enumeratedResources = g_resources_enumerate_children(path.c_str(), G_RESOURCE_LOOKUP_FLAGS_NONE, &(err));
+	//if (err)
+	//{
+	//	LOG("domain: '" + std::to_string(static_cast<uint32>(err->domain))
+	//		+ std::string("' - code: '") + std::to_string(err->code) + std::string("'"), LogLevel::Error);
+	//	if (err->message != nullptr)
+	//	{
+	//		std::string errorString(err->message);
+	//		LOG(errorString, LogLevel::Error);
+	//	}
+	//}
+	//std::vector<std::string> resources = Glib::ArrayHandler<std::string>::array_to_vector(enumeratedResources, Glib::OWNERSHIP_DEEP);
+	//for (std::string const& resource : resources)
+	//{
+	//	LOG(resource);
+	//}
+
+	//resources = Gio::Resource::enumerate_children_global(path, Gio::ResourceLookupFlags::RESOURCE_LOOKUP_FLAGS_NONE);
+	//for (std::string const& resource : resources)
+	//{
+	//	LOG(resource);
+	//}
 
 	if (!InitializeAudio())
 	{
