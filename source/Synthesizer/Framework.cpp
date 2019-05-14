@@ -21,6 +21,7 @@
 
 #include "Config.h"
 #include "MidiManager.h"
+#include <glibmm/ustring.h>
 
 
 //====================
@@ -199,7 +200,7 @@ void Framework::on_activate()
 	// and therefore the application will stop running.
 	catch (Glib::Error const& ex)
 	{
-		LOG("Framework::on_activate > " + std::string(ex.what()), LogLevel::Error);
+		LOG("Framework::on_activate > " + std::string(ex.what().c_str()), LogLevel::Error);
 	}
 	catch (std::exception const& ex)
 	{

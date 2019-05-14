@@ -19,8 +19,7 @@ setlocal
   set XMLLINT=%TOOL_DIR%xmllint\xmllint.exe
 
 rem compile our resources
-%TOOL_DIR%glib-compile-resources.exe --target=%TARGET_FILE% --sourcedir=%RES_DIR% --generate-source %RES_DIR%synthesizer.gresource.xml
-%TOOL_DIR%glib-compile-resources.exe --target=%GEN_DIR%resources.h --sourcedir=%RES_DIR% --generate-header %RES_DIR%synthesizer.gresource.xml
+%TOOL_DIR%glib-compile-resources.exe --manual-register --target=%TARGET_FILE% --sourcedir=%RES_DIR% --generate-source %RES_DIR%synthesizer.gresource.xml
 
 endlocal
 
