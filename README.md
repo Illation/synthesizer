@@ -14,6 +14,8 @@ C++ Synthesizer
 
 #### The Synthesizer Project
 Synthesizer uses a project generation tool called [GENie](https://github.com/bkaradzic/GENie) to generate project files. Currently only project generation for Visual Studio 2017 has been tested, but support for Linux makefiles should soon be added.
+The project comes with packaged lib, dll and include files for all dependancies, compiled with vs2017. gtkmm was obtained through vcpkg. If you want to use a different visual studio version, use Vcpkg to compile gtkmm for that version.
+Note you might have to [set the toolset for vcpkg manually](https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH).
 
 In order to build the project, first download the GENie executable. The easiest thing for later use would be installing it in your PATH, but you can also use the executable anywhere else.
 Next, open a terminal and navigate to the repository root folder, and execute:
