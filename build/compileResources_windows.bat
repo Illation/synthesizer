@@ -3,7 +3,7 @@
 SET SOURCE_DIR=%1
 
 SET GEN_DIR=%SOURCE_DIR%/Synthesizer/UI/_generated/
-SET RES_DIR=%SOURCE_DIR%/Synthesizer/Config/UI/
+SET RES_DIR=%SOURCE_DIR%/../resources/ui/
 SET TOOL_DIR=%SOURCE_DIR%\..\dependancies\tools\
 
 SET TARGET_FILE=%GEN_DIR%resources.c 

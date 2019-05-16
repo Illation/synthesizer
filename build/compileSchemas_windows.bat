@@ -4,7 +4,7 @@ SET SOURCE_DIR=%1
 SET OUT_DIR=%2
 
 SET GEN_DIR=%OUT_DIR%\..\share\glib-2.0\schemas\
-SET RES_DIR=%SOURCE_DIR%\Synthesizer\Config\UI\schemas\
+SET RES_DIR=%SOURCE_DIR%\..\resources\ui\schemas\
 
 ECHO --
 ECHO --

@@ -3,9 +3,6 @@
 
 #include <Helper/InputManager.h>
 
-#include <FileSystem/FileUtil.h>
-#include <FileSystem/Entry.h>
-
 #include <gtkmm/object.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>
@@ -47,16 +44,7 @@ FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Buil
 FrameworkWindow* FrameworkWindow::create()
 {
 	// Load the Builder file and instantiate its widgets.
-	//Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/window.ui");
-
-	// #todo: switch to using resources
-	File* uiFile = new File("../config/UI/window.ui", nullptr);
-	if (!uiFile->Open(FILE_ACCESS_MODE::Read))
-	{
-		throw std::runtime_error("couldn't read window file");
-	}
-	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_string(FileUtil::AsText(uiFile->Read()).c_str());
-	SafeDelete(uiFile);
+	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/window.ui");
 
 	// get the toplevel element
 	FrameworkWindow* window = nullptr;

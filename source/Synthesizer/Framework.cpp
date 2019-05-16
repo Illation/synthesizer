@@ -16,9 +16,6 @@
 #include <Helper/Commands.h>
 #include <Helper/InputManager.h>
 
-#include <FileSystem/FileUtil.h>
-#include <FileSystem/Entry.h>
-
 #include "Config.h"
 #include "MidiManager.h"
 #include <glib/gerror.h>
@@ -153,16 +150,7 @@ void Framework::on_startup()
 	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create();
 	try
 	{
-		//refBuilder->add_from_resource("/com/leah-lindner/synthesizer/app_menu.ui");
-		// #todo: switch to using resources
-		File* uiFile = new File("../config/UI/app_menu.ui", nullptr);
-		if (!uiFile->Open(FILE_ACCESS_MODE::Read))
-		{
-			throw std::runtime_error("couldn't read window file");
-		}
-		std::string uiString = FileUtil::AsText(uiFile->Read());
-		refBuilder->add_from_string(uiString.c_str());
-		SafeDelete(uiFile);
+		refBuilder->add_from_resource("/com/leah-lindner/synthesizer/app_menu.ui");
 	}
 	catch (const Glib::Error& ex)
 	{

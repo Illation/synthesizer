@@ -38,13 +38,21 @@ function outputDirectories(_project)
 end
 
 --platform specific library paths
-function platformLibraries()
+function platformLibraries()--libraries built specifically for debug or release
+	local cfgs = configurations()
 	local p = platforms()
-	for j = 1, #p do
-		local depPf = path.join(DEP_DIR, p[j] .. "/") 
+	for i = 1, #cfgs do
+		for j = 1, #p do
+			local depPf = path.join(DEP_DIR, p[j] .. "/") 
+			local suffix = ""
+			if(string.startswith(cfgs[i], "Debug"))
+				then suffix = "/Debug"
+				else suffix = "/Release"
+			end
 
-		configuration { "vs*", p[j] }
-			libdirs { path.join(depPf, "gtkmm") }
+			configuration { "vs*", p[j], cfgs[i] }
+				libdirs { path.join(depPf, "gtkmm" .. suffix) }
+		end
 	end
 	configuration {}
 end
@@ -53,7 +61,7 @@ end
 function windowsPlatformExtraBuildSteps()
 	local p = platforms()
 	for j = 1, #p do
-		local copyCmd = "call $(SolutionDir)..\\build\\copyResources_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) " .. p[j] .. " true"
+		local copyCmd = "call $(SolutionDir)..\\build\\copyResources_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) " .. p[j] .. " true $(Configuration)"
 		local schemaCmd = "call $(SolutionDir)..\\build\\compileSchemas_windows.bat " .. path.getabsolute(SOURCE_DIR) .. " $(OutDir) "
 
 		local compileCmd = "$(SolutionDir)..\\build\\compileResources_windows.bat " .. path.getabsolute(SOURCE_DIR)
@@ -107,12 +115,13 @@ project "General"
 	location "."
 	--specific files to avoid showing vs projects and solutions in build folder
 	files { 
-		path.join(PROJECT_DIR, "source/**.ui"), 
-		path.join(PROJECT_DIR, "source/**.gresource.xml"), 
-		path.join(PROJECT_DIR, "source/**.gschema.xml"), 
+		path.join(PROJECT_DIR, "resources/**.ui"), 
+		path.join(PROJECT_DIR, "resources/**.gresource.xml"), 
+		path.join(PROJECT_DIR, "resources/**.gschema.xml"), 
 		path.join(PROJECT_DIR, "build/*.bat"), 
 		path.join(PROJECT_DIR, "build/*.lua"), 
 		path.join(PROJECT_DIR, "build/.vahashtags"), --for visual assist
+		path.join(PROJECT_DIR, "doc/*.*"), 
 		path.join(PROJECT_DIR, "*.*"), 
 		path.join(PROJECT_DIR, ".gitignore"), 
 		path.join(PROJECT_DIR, ".gitattributes") 
@@ -136,6 +145,14 @@ project "Synthesizer"
 			"winmm" -- rtMidi on windows
 		} 
 
+	configuration "Debug"
+		links { "bz2d", "cairod", "cairo-gobjectd", "freetyped", "libpng16d", "pcre16d", "pcre32d", "pcrecppd", "pcred", "pcreposixd", "pixman-1d", "zlibd" }
+	configuration "Development"
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration "Shipping"
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration {}
+
 	platformLibraries()
 	windowsPlatformExtraBuildSteps()
 
@@ -144,14 +161,10 @@ project "Synthesizer"
 	-- everything from here is gtkmm dependancies
 		"atk-1.0" 
 		, "atkmm" 
-		, "bz2" 
-		, "cairo" 
-		, "cairo-gobject" 
 		, "cairomm-1.0" 
 		, "epoxy" 
 		, "expat" 
 		, "fontconfig" 
-		, "freetype" 
 		, "gailutil-3.0" 
 		, "gdk_pixbuf-2.0" 
 		, "gdk-3.0" 
@@ -170,20 +183,12 @@ project "Synthesizer"
 		, "libffi" 
 		, "libiconv" 
 		, "libintl" 
-		, "libpng16" 
 		, "pango-1.0" 
 		, "pangocairo-1.0" 
 		, "pangoft2-1.0" 
 		, "pangomm" 
 		, "pangowin32-1.0" 
-		, "pcre" 
-		, "pcre16" 
-		, "pcre32" 
-		, "pcrecpp" 
-		, "pcreposix" 
-		, "pixman-1" 
 		, "sigc-2.0" 
-		, "zlib" 
 	}
 
 	--additional includedirs

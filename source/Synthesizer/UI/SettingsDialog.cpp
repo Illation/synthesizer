@@ -2,9 +2,6 @@
 #include "SettingsDialog.h"
 
 
-#include <FileSystem/FileUtil.h>
-#include <FileSystem/Entry.h>
-
 //====================
 // Settings Dialog
 //====================
@@ -47,17 +44,7 @@ SettingsDialog::SettingsDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::
 SettingsDialog* SettingsDialog::create(Gtk::Window& parent)
 {
 	// Load the Builder file and instantiate its widgets.
-
-	// #todo: switch to using resources
-	File* uiFile = new File("../config/UI/prefs.ui", nullptr);
-	if (!uiFile->Open(FILE_ACCESS_MODE::Read))
-	{
-		throw std::runtime_error("couldn't read prefs file");
-	}
-	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_string(FileUtil::AsText(uiFile->Read()).c_str());
-	SafeDelete(uiFile);
-	
-	//Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/prefs.ui");
+	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/prefs.ui");
 
 	SettingsDialog* dialog = nullptr;
 	refBuilder->get_widget_derived("prefs_dialog", dialog);
