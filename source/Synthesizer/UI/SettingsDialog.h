@@ -24,21 +24,28 @@ public:
 	static SettingsDialog* create(Gtk::Window& parent);
 
 	void PopulateApiOptions();
+	void PopulateDeviceOptions();
 
+	void PopulateMidiOptions();
 protected:
 
 	void OnApiComboChanged();
+	void OnDeviceComboChanged();
+
+	void OnMidiComboChanged();
 
 	// Data
 	/////////
 
 	Glib::RefPtr<Gtk::Builder> m_RefBuilder;
 	Glib::RefPtr<Gio::Settings> m_Settings;
-	Gtk::FontButton* m_Font = nullptr;
-	Gtk::ComboBoxText* m_Transition = nullptr;
 
 	Gtk::ComboBoxText* m_ApiSelector = nullptr;
 	bool m_AutoApiComboChanged = false;
 
 	Gtk::ComboBoxText* m_DeviceSelector = nullptr;
+	bool m_AutoDeviceComboChanged = false;
+
+	Gtk::ComboBoxText* m_MidiSelector = nullptr;
+	bool m_AutoMidiComboChanged = false;
 };

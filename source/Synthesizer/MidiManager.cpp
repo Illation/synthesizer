@@ -2,6 +2,168 @@
 #include "MidiManager.h"
 
 
+// Init / deInit
+//////////////////////
+
+//---------------------------------
+// MidiManager::~MidiManager
+//
+// MIDI manager destructor
+//
+MidiManager::~MidiManager()
+{
+	UnregisterAllListeners();
+}
+
+//---------------------------------
+// MidiManager::InitializeMidi
+//
+// Initialize default MIDI device
+//
+bool MidiManager::InitializeMidi()
+{
+	if (!CreateMidiInput())
+	{
+		return false;
+	}
+
+	LOG("RtMidi version: " + m_MidiInput->getVersion());
+
+	// Check inputs.
+	uint32 numPorts = m_MidiInput->getPortCount();
+	if (numPorts > 0)
+	{
+		// yay we have a midi device
+
+		// log our available ports
+		LOG("There are '" + std::to_string(numPorts) + std::string("' MIDI input sources available."));
+		for (uint32 i = 0; i < numPorts; i++) 
+		{
+			LOG("\t Input Port #" + std::to_string(i) + std::string(": '") + m_MidiInput->getPortName(i) + std::string("'"));
+		}
+
+		// open the port we want
+		m_ActivePort = 0;
+		m_MidiInput->openPort(static_cast<uint32>(m_ActivePort));
+
+		m_MidiInput->setCallback(&MidiManager::OnMidiCallback);
+
+		// Don't ignore sysex, timing, or active sensing messages.
+		m_MidiInput->ignoreTypes(false, false, false);
+	}
+	else
+	{
+		LOG("No MIDI devices found, you can use your keyboard to play notes.");
+		m_ActivePort = s_DeselectedPort;
+	}
+
+	LOG("");
+
+	return true;
+}
+
+//---------------------------------
+// MidiManager::TerminateMidi
+//
+// Close MIDI connection
+//
+void MidiManager::TerminateMidi()
+{
+	if (m_ActivePort != s_DeselectedPort)
+	{
+		m_MidiInput->closePort();
+		SafeDelete(m_MidiInput);
+
+		m_ActivePort = s_DeselectedPort;
+	}
+}
+
+//---------------------------------
+// MidiManager::CreateMidiInput
+//
+// Create the RtMidi object and set its error callback
+//
+bool MidiManager::CreateMidiInput()
+{
+	// make an input device
+	try 
+	{
+		m_MidiInput = new RtMidiIn();
+	}
+	catch (RtMidiError &error) 
+	{
+		OnRtMidiError(error.getType(), error.getMessage(), nullptr);
+		return false;
+	}
+
+	// Log error messages
+	m_MidiInput->setErrorCallback(&MidiManager::OnRtMidiError);
+
+	return true;
+}
+
+// Device settings
+///////////////////
+
+//---------------------------------
+// MidiManager::GetAllPossibleDevices
+//
+// List all connected midi devices
+//
+void MidiManager::GetAllPossibleDevices(std::vector<T_DeviceIdNamePair>& deviceIdNamePairs) const
+{
+	// check pointer
+	if (m_MidiInput == nullptr)
+	{
+		LOG("MidiManager::GetAllPossibleDevices > Couldn't list devices because no midi object exists", LogLevel::Warning);
+		return;
+	}
+
+	// list devices - there may not be any
+	uint32 numPorts = m_MidiInput->getPortCount();
+	for (uint32 i = 0; i < numPorts; i++)
+	{
+		deviceIdNamePairs.emplace_back(i, m_MidiInput->getPortName(i));
+	}
+}
+
+//---------------------------------
+// MidiManager::SetActiveDevice
+//
+// Set which MIDI device we want to use for input
+//
+void MidiManager::SetActiveDevice(int32 const deviceId)
+{
+	if (m_MidiInput == nullptr)
+	{
+		if (!CreateMidiInput())
+		{
+			return;
+		}
+		// Don't ignore sysex, timing, or active sensing messages.
+		m_MidiInput->ignoreTypes(false, false, false);
+	}
+
+	uint32 numPorts = m_MidiInput->getPortCount();
+	if (static_cast<int32>(numPorts) <= deviceId)
+	{
+		LOG("MidiManager::SetActiveDevice > selected device id not available, id #" + std::to_string(deviceId), LogLevel::Warning);
+		return;
+	}
+
+	if (m_ActivePort != s_DeselectedPort)
+	{
+		m_MidiInput->closePort();
+	}
+
+	// open the port we want
+	m_ActivePort = deviceId;
+	m_MidiInput->openPort(static_cast<uint32>(m_ActivePort));
+}
+
+// Events
+///////////////////
+
 //---------------------------------
 // MidiManager::HandleMidiMessage
 //
@@ -65,16 +227,6 @@ void MidiManager::RegisterListener(E_MidiStatus const status, I_MidiListener* co
 
 	// add our listener
 	foundPairIt->second.emplace_back(listener);
-}
-
-//---------------------------------
-// MidiManager::~MidiManager
-//
-// MIDI manager destructor
-//
-MidiManager::~MidiManager()
-{
-	UnregisterAllListeners();
 }
 
 //---------------------------------
@@ -157,4 +309,44 @@ void MidiManager::Notify(E_MidiStatus const status, uint8 const channel, std::ve
 	}
 
 	LOG("\t Data: " + dataMessage);
+}
+
+// Callbacks
+/////////////////
+
+//---------------------------------
+// MidiManager::OnRtMidiError
+//
+// When RtMidi detects an error, log it
+//
+void MidiManager::OnRtMidiError(RtMidiError::Type type, std::string const&errorText, void* userData)
+{
+	UNUSED(userData);
+
+	LogLevel logLevel = LogLevel::Error;
+	switch (type)
+	{
+	case RtMidiError::WARNING:
+	case RtMidiError::DEBUG_WARNING:
+	case RtMidiError::UNSPECIFIED:
+	case RtMidiError::NO_DEVICES_FOUND:
+		logLevel = LogLevel::Warning;
+	}
+
+	LOG(errorText, logLevel);
+}
+
+//---------------------------------
+// MidiManager::OnMidiCallback
+//
+// RtMidi Callback function
+//
+void MidiManager::OnMidiCallback(double dt, std::vector<uint8>* message, void* userData)
+{
+	UNUSED(userData);
+
+	if (message != nullptr)
+	{
+		MidiManager::GetInstance()->HandleMidiMessage(dt, *message);
+	}
 }

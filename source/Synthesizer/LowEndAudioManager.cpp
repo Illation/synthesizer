@@ -27,7 +27,7 @@ bool LowEndAudioManager::InitializeAudio(Synthesizer* const synth)
 	LOG("RtAudio API: " + RtAudio::getApiDisplayName(m_Audio->getCurrentApi()));
 
 	// Determine the number of devices available
-	unsigned int deviceCount = m_Audio->getDeviceCount();
+	uint32 deviceCount = m_Audio->getDeviceCount();
 	if (deviceCount == 0)
 	{
 		LOG("LowEndAudioManager::InitializeAudio > No sound device found!", Warning);
@@ -183,13 +183,100 @@ void LowEndAudioManager::SetActiveApi(std::string const& apiId)
 	}
 
 	// Determine the number of devices available
-	unsigned int deviceCount = m_Audio->getDeviceCount();
+	uint32 deviceCount = m_Audio->getDeviceCount();
 	if (deviceCount == 0)
 	{
 		LOG("LowEndAudioManager::SetActiveApi > No sound device found!", LogLevel::Error);
 		return;
 	}
 	m_Parameters.deviceId = m_Audio->getDefaultOutputDevice();
+
+	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
+
+	try
+	{
+		m_Audio->openStream(&m_Parameters,
+			nullptr,
+			RTAUDIO_SINT16,
+			output.SampleRate * output.Channels,
+			&framesPerBuffer,
+			&LowEndAudioManager::AudioCallback<int16>,
+			m_Synthesizer,
+			&m_Options,
+			&LowEndAudioManager::OnRtAudioError);
+	}
+	catch (RtAudioError& error)
+	{
+		OnRtAudioError(error.getType(), error.getMessage());
+		return;
+	}
+
+	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
+	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
+	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
+
+	m_Audio->startStream();
+}
+
+//---------------------------------
+// LowEndAudioManager::GetAllPossibleDevices
+//
+// List all available audio devices/soundcards
+//
+void LowEndAudioManager::GetAllPossibleDevices(std::vector<T_DeviceIdNamePair>& deviceIdNamePairs) const
+{
+	// Determine the number of devices available
+	uint32 deviceCount = m_Audio->getDeviceCount();
+
+	deviceIdNamePairs.clear();
+	for (uint32 deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++)
+	{
+		RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(deviceIdx);
+		if (info.probed == true)
+		{
+			deviceIdNamePairs.emplace_back(deviceIdx, info.name);
+		}
+		else
+		{
+			deviceIdNamePairs.emplace_back(deviceIdx, "");
+		}
+	}
+}
+
+//---------------------------------
+// LowEndAudioManager::GetActiveDevice
+//
+// Get the currently used soundcard
+//
+uint32 LowEndAudioManager::GetActiveDevice() const
+{
+	return m_Parameters.deviceId;
+}
+
+//---------------------------------
+// LowEndAudioManager::SetActiveDevice
+//
+// Set the active soundcard
+//
+void LowEndAudioManager::SetActiveDevice(uint32 const deviceId)
+{
+	// Determine the number of devices available
+	uint32 deviceCount = m_Audio->getDeviceCount();
+	if (deviceCount <= deviceId)
+	{
+		LOG("LowEndAudioManager::SetActiveDevice > Invalid device index, num devices '" + std::to_string(deviceCount) + std::string("', id '")
+			+ std::to_string(deviceId) + std::string("'"), LogLevel::Error);
+		return;
+	}
+	m_Parameters.deviceId = deviceId;
+
+	m_Audio->stopStream();
+
+	if (m_Audio->isStreamOpen())
+	{
+		m_Audio->closeStream();
+	}
 
 	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
 	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value

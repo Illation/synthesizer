@@ -18,6 +18,7 @@ public:
 	friend class Framework;
 
 	typedef std::pair<std::string, std::string> T_ApiIdNamePair;
+	typedef std::pair<uint32, std::string> T_DeviceIdNamePair;
 
 private:
 	// private init deinit
@@ -32,9 +33,16 @@ private:
 public:
 	// public interface
 	//------------------
+
+	// api setting
 	void GetAllPossibleApis(std::vector<T_ApiIdNamePair>& apiIdNamePairs) const;
 	std::string GetActiveApiId() const;
 	void SetActiveApi(std::string const& apiId);
+
+	// device setting
+	void GetAllPossibleDevices(std::vector<T_DeviceIdNamePair>& deviceIdNamePairs) const;
+	uint32 GetActiveDevice() const;
+	void SetActiveDevice(uint32 const deviceId);
 
 protected:
 	// audio stream callback fn

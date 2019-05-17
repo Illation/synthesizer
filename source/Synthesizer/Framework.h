@@ -9,8 +9,6 @@
 #include <glibmm/ustring.h>
 
 // forward declarations
-class RtMidiIn;
-
 class FrameworkWindow;
 
 //---------------------------------
@@ -71,6 +69,4 @@ private:
 
 	std::unique_ptr<Synthesizer> m_Synthesizer;
 
-	// MIDI input
-	RtMidiIn *m_MidiInput;
 };

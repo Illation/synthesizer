@@ -54,133 +54,6 @@ THE SOFTWARE.
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="demoSettingsLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_left">16</property>
-            <property name="margin_right">16</property>
-            <property name="margin_top">6</property>
-            <property name="margin_bottom">6</property>
-            <property name="label" translatable="yes">Demo Settings</property>
-            <property name="xalign">0</property>
-            <attributes>
-              <attribute name="font-desc" value="Sans Bold 12"/>
-            </attributes>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkGrid" id="grid">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_left">16</property>
-            <property name="margin_right">16</property>
-            <property name="margin_bottom">16</property>
-            <property name="row_spacing">12</property>
-            <property name="column_spacing">6</property>
-            <property name="column_homogeneous">True</property>
-            <child>
-              <object class="GtkLabel" id="fontlabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label">_Font:</property>
-                <property name="use_underline">True</property>
-                <property name="mnemonic_widget">font</property>
-                <property name="xalign">1</property>
-              </object>
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkFontButton" id="font">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="receives_default">False</property>
-                <property name="font">Sans 12</property>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="transitionlabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label">_Transition:</property>
-                <property name="use_underline">True</property>
-                <property name="mnemonic_widget">transition</property>
-                <property name="xalign">1</property>
-              </object>
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkComboBoxText" id="transition">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="has_frame">False</property>
-                <items>
-                  <item id="none" translatable="yes">None</item>
-                  <item id="crossfade" translatable="yes">Fade</item>
-                  <item id="slide-left-right" translatable="yes">Slide</item>
-                </items>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSeparator" id="separator">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">2</property>
-            <property name="margin_bottom">2</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="padding">2</property>
-            <property name="position">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="audioSettingsLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_left">16</property>
-            <property name="margin_right">16</property>
-            <property name="margin_top">6</property>
-            <property name="margin_bottom">6</property>
-            <property name="label" translatable="yes">Audio Settings</property>
-            <property name="xalign">0</property>
-            <attributes>
-              <attribute name="font-desc" value="Sans Bold 12"/>
-            </attributes>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">3</property>
-          </packing>
-        </child>
-        <child>
           <object class="GtkGrid" id="grid1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -189,7 +62,6 @@ THE SOFTWARE.
             <property name="margin_bottom">16</property>
             <property name="row_spacing">12</property>
             <property name="column_spacing">6</property>
-            <property name="column_homogeneous">True</property>
             <child>
               <object class="GtkLabel" id="driverLabel">
                 <property name="visible">True</property>
@@ -199,7 +71,7 @@ THE SOFTWARE.
               </object>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
+                <property name="top_attach">1</property>
               </packing>
             </child>
             <child>
@@ -209,7 +81,7 @@ THE SOFTWARE.
               </object>
               <packing>
                 <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
+                <property name="top_attach">1</property>
               </packing>
             </child>
             <child>
@@ -221,7 +93,7 @@ THE SOFTWARE.
               </object>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="top_attach">1</property>
+                <property name="top_attach">2</property>
               </packing>
             </child>
             <child>
@@ -231,8 +103,90 @@ THE SOFTWARE.
               </object>
               <packing>
                 <property name="left_attach">1</property>
-                <property name="top_attach">1</property>
+                <property name="top_attach">2</property>
               </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="audioSettingsLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_top">6</property>
+                <property name="margin_bottom">6</property>
+                <property name="label" translatable="yes">Audio Settings</property>
+                <property name="xalign">1</property>
+                <attributes>
+                  <attribute name="font-desc" value="Sans 11"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="midiSettingsLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_top">6</property>
+                <property name="margin_bottom">6</property>
+                <property name="label" translatable="yes">MIDI Settings</property>
+                <property name="xalign">1</property>
+                <attributes>
+                  <attribute name="font-desc" value="Sans 11"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="inputDeviceLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Input Device:</property>
+                <property name="xalign">1</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="midi">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
             </child>
           </object>
           <packing>
