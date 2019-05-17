@@ -4,13 +4,13 @@
 //////////////////////
 
 //---------------------------------
-// Framework::AudioCallback
+// LowEndAudioManager::AudioCallback
 //
 // Templated callback function for RtAudio - called when our stream requests more data
 // #todo: resolve midi times
 //
 template<typename T>
-int32 Framework::AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData)
+int32 LowEndAudioManager::AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData)
 {
 	UNUSED(inputBuffer);
 	UNUSED(streamTime);		// should be used to sync MIDI events properly

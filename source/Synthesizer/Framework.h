@@ -10,8 +10,6 @@
 
 // forward declarations
 class RtMidiIn;
-class RtAudio;
-typedef unsigned int RtAudioStreamStatus;
 
 class FrameworkWindow;
 
@@ -52,10 +50,6 @@ protected:
 	void on_startup() override;
 	void on_activate() override;
 	void on_open(Gio::Application::type_vec_files const& files, Glib::ustring const& hint) override;
-public:
-
-	template<typename T>
-	static int32 AudioCallback(void *outputBuffer, void* inputBuffer, uint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData);
 
 private:
 	void InitializeUtilities();
@@ -65,6 +59,7 @@ private:
 	void TerminateAudio();
 
 	// Runtime
+private:
 	bool OnTick();
 	void OnActionPreferences();
 	void OnActionQuit();
@@ -78,8 +73,4 @@ private:
 
 	// MIDI input
 	RtMidiIn *m_MidiInput;
-	// RT audio
-	RtAudio* m_Audio;
 };
-
-#include "Framework.inl"

@@ -9,8 +9,7 @@
 #include <gtkmm/comboboxtext.h>
 
 // forward declarations
-//class Gtk::FontButton;
-//class Gtk::ComboBoxText;
+class Framework;
 
 //---------------------------------
 // SettingsDialog
@@ -24,9 +23,22 @@ public:
 
 	static SettingsDialog* create(Gtk::Window& parent);
 
+	void PopulateApiOptions();
+
 protected:
+
+	void OnApiComboChanged();
+
+	// Data
+	/////////
+
 	Glib::RefPtr<Gtk::Builder> m_RefBuilder;
 	Glib::RefPtr<Gio::Settings> m_Settings;
-	Gtk::FontButton* m_Font;
-	Gtk::ComboBoxText* m_Transition;
+	Gtk::FontButton* m_Font = nullptr;
+	Gtk::ComboBoxText* m_Transition = nullptr;
+
+	Gtk::ComboBoxText* m_ApiSelector = nullptr;
+	bool m_AutoApiComboChanged = false;
+
+	Gtk::ComboBoxText* m_DeviceSelector = nullptr;
 };
