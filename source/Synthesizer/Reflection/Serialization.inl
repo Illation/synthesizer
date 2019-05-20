@@ -12,9 +12,66 @@ namespace serialization {
 // Create a JSON::Object from the templated type using reflection data. Returns nullptr if serialization is unsuccsesful.
 //
 template<typename T>
-JSON::Object* SerializeToJson(T* const object)
+JSON::Object* SerializeToJson(T* const serialObject)
 {
-	return nullptr;
+	rttr::instance inst(serialObject);
+	if (!inst.is_valid())
+	{
+		LOG("SerializeToJson > Couldn't create a valid instance from the object to serialize!", Warning);
+		return nullptr;
+	}
+
+	JSON::Object* outObject = nullptr;
+
+	ToJsonRecursive(inst, outObject);
+
+	return outObject;
+}
+
+
+//---------------------------------
+// DeserializeFromJson
+//
+// Create the reflected type from a file, the file type is determined by the extension
+// Returns nullptr if deserialization is unsuccsesful. 
+//
+template<typename T>
+bool DeserializeFromFile(std::string const& filePath, T& outObject)
+{
+	// Open the file
+	File* file = new File(filePath, nullptr);
+	if (!file->Open(FILE_ACCESS_MODE::Read))
+	{
+		LOG("DeserializeFromFile > unable to open file '" + filePath + std::string("'!"), Warning);
+		return false;
+	}
+
+	// extract the necessary information
+	std::string const ext(file->GetExtension());
+	std::string const content(FileUtil::AsText(file->Read()));
+
+	// We can now close the file again
+	SafeDelete(file);
+
+	// for now json is the only supported format
+	if (ext == "json")
+	{
+		// Read the file into a json parser
+		JSON::Parser parser = JSON::Parser(content);
+
+		// if we don't have a root object parsing json was unsuccesful
+		JSON::Object* root = parser.GetRoot();
+		if (!root)
+		{
+			LOG("DeserializeFromFile > unable to parse '" + filePath + std::string("' to JSON!"), Warning);
+			return false;
+		}
+
+		return DeserializeFromJson(root, outObject);
+	}
+
+	LOG("DeserializeFromFile > File type '" + ext + std::string("' not supported!"), Warning);
+	return false;
 }
 
 //---------------------------------

@@ -50,8 +50,6 @@ private:
 	Config() = default;
 	virtual ~Config() = default;
 
-	void LoadFromJSON();
-
 	// DATA
 	///////
 
