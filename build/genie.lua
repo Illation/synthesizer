@@ -51,7 +51,10 @@ function platformLibraries()--libraries built specifically for debug or release
 			end
 
 			configuration { "vs*", p[j], cfgs[i] }
-				libdirs { path.join(depPf, "gtkmm" .. suffix) }
+				libdirs { 
+					path.join(depPf, "gtkmm" .. suffix), 
+					path.join(depPf, "rttr" .. suffix) 
+				}
 		end
 	end
 	configuration {}
@@ -90,7 +93,8 @@ configuration "vs*"
 		"__WINDOWS_MM__"											-- RtMidi
 		}
 	includedirs { 
-		path.join(DEP_INCLUDE, "gtkmm")
+		path.join(DEP_INCLUDE, "gtkmm"),
+		path.join(DEP_INCLUDE, "rttr")
 	}
 	debugdir "$(OutDir)"
 configuration { "vs*", "x32" }
@@ -145,20 +149,31 @@ project "Synthesizer"
 			"winmm" -- rtMidi on windows
 		} 
 
-	configuration "Debug"
-		links { "bz2d", "cairod", "cairo-gobjectd", "freetyped", "libpng16d", "pcre16d", "pcre32d", "pcrecppd", "pcred", "pcreposixd", "pixman-1d", "zlibd" }
-	configuration "Development"
-		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
-	configuration "Shipping"
-		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
-	configuration {}
-
 	platformLibraries()
 	windowsPlatformExtraBuildSteps()
 
-	--Linked libraries
+	--Linked libraries with varying names per configuration
+	configuration "Debug"
+		-- RTTR
+		links { "rttr_core_d" }
+		-- GTKmm
+		links { "bz2d", "cairod", "cairo-gobjectd", "freetyped", "libpng16d", "pcre16d", "pcre32d", "pcrecppd", "pcred", "pcreposixd", "pixman-1d", "zlibd" }
+	configuration "Development"
+		-- RTTR
+		links { "rttr_core" }
+		-- GTKmm
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration "Shipping"
+		-- RTTR
+		links { "rttr_core" }
+		-- GTKmm
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration {}
+
+	--Linked libraries with same name for every configuration
+	--
+	-- GTKmm
     links{ 
-	-- everything from here is gtkmm dependancies
 		"atk-1.0" 
 		, "atkmm" 
 		, "cairomm-1.0" 

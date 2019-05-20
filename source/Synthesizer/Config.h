@@ -1,6 +1,8 @@
 #pragma once
 #include <Helper/Singleton.h>
 
+#include <rttr/type>
+
 //---------------------------------
 // Config
 //
@@ -32,6 +34,8 @@ public:
 		uint32 BitRate = 0;
 		double TimePerBuffer = 0.0;
 		double TimePerSample = 0.0;
+
+		RTTR_ENABLE()
 	};
 
 	OutputSettings const& GetOutput() const { return m_Output; }

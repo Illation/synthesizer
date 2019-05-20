@@ -27,30 +27,39 @@ namespace JSON
 	//ValueTypes
 	struct Value
 	{
-		virtual JSON::ValueType GetType() { return JSON_Null; }
+		virtual JSON::ValueType GetType() const { return JSON_Null; }
 		virtual ~Value() {}
 	
 		JSON::String* str();
+		JSON::String const* const str() const;
+
 		JSON::Number* num();
+		JSON::Number const* const num() const;
+
 		JSON::Object* obj();
+		JSON::Object const* const obj() const;
+
 		JSON::Array* arr();
+		JSON::Array const* const arr() const;
+
 		JSON::Bool* b();
+		JSON::Bool const* const b() const;
 	};
 	struct String : public Value
 	{
-		JSON::ValueType GetType() { return JSON_String; }
+		JSON::ValueType GetType() const { return JSON_String; }
 		std::string value;
 	};
 	struct Number : public Value
 	{
-		JSON::ValueType GetType() { return JSON_Number; }
+		JSON::ValueType GetType() const { return JSON_Number; }
 		double value;
 		int64 valueInt;
 		bool isInt = false;
 	};
 	struct Object : public Value
 	{
-		JSON::ValueType GetType() { return JSON_Object; }
+		JSON::ValueType GetType() const { return JSON_Object; }
 		~Object();
 		JSON::Value* operator[] (const std::string &key)
 		{
@@ -65,7 +74,7 @@ namespace JSON
 	};
 	struct Array : public Value
 	{
-		JSON::ValueType GetType() { return JSON_Array; }
+		JSON::ValueType GetType() const { return JSON_Array; }
 		~Array();
 		JSON::Value* operator[] (const uint32 i)
 		{
@@ -80,7 +89,7 @@ namespace JSON
 	};
 	struct Bool : public Value
 	{
-		JSON::ValueType GetType() { return JSON_Bool; }
+		JSON::ValueType GetType() const { return JSON_Bool; }
 		bool value;
 	};
 	

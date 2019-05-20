@@ -5,9 +5,9 @@
 #include <Vendor/RtAudio.h>
 
 //---------------------------------
-// Framework
+// LowEndAudioManager
 //
-// Main class for this project
+// Manages the setup of audio settings on our soundcard
 //
 class LowEndAudioManager final : public Singleton<LowEndAudioManager>
 {

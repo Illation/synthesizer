@@ -22,7 +22,7 @@ In all other cases check [the build documentation](doc/building.md).
 
 ## Third Party
 
-This project uses RtMIDI, RtAudio, GTKmm and the "Sweet" theme for GTK, here are the licenses for them:
+This project uses RtMIDI, RtAudio, RTTR, GTKmm and the "Sweet" theme for GTK, here are the licenses for them:
 
 ### RtMidi and RtAudio
 
@@ -35,6 +35,10 @@ RtAudio is licensed with the [MIT license](http://www.music.mcgill.ca/~gary/rtau
 GTKmm is licensed under [GNU LGPL](https://www.gtkmm.org/en/license.html) 
 
 Sweet is licensed under [GNU General Public License v3.0](https://github.com/EliverLara/Sweet/blob/master/LICENSE)
+
+### RTTR
+
+RTTR is licensed with the [MIT license](https://github.com/rttrorg/rttr/blob/master/LICENSE.txt)
 
 ### Genie
 
