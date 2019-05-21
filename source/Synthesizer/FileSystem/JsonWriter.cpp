@@ -143,6 +143,7 @@ bool Writer::WriteValue(Value const* const jVal)
 		return WriteNumber(static_cast<Number const*>(jVal));
 	case ValueType::JSON_String:
 		WriteString(static_cast<String const*>(jVal)->value);
+		break;
 
 	case ValueType::JSON_Array:
 		return WriteArray(static_cast<Array const*>(jVal));

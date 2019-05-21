@@ -24,7 +24,7 @@ public:
 	static SettingsDialog* create(Gtk::Window& parent);
 
 	void PopulateApiOptions();
-	void PopulateDeviceOptions();
+	void PopulateDeviceOptions(bool preventDeviceRecreateion = true);
 
 	void PopulateMidiOptions();
 protected:

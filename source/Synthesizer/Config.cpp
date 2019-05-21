@@ -8,17 +8,38 @@
 RTTR_REGISTRATION
 {
 	using namespace rttr;
-	registration::class_<Config::OutputSettings>("outputSettings")
+
+	registration::class_<Config::UserDirPointer>("dir pointer")
+		.property("user dir path", &Config::UserDirPointer::m_UserDirPath)
+		;
+
+	registration::class_<Config::Settings::Output>("output")
 		.constructor<>()
 		(
 		)
-		.method("DeriveSettings", &Config::OutputSettings::DeriveSettings)
+		.method("DeriveSettings", &Config::Settings::Output::DeriveSettings)
 		(
 		)
-		// register directly a member object pointer; mark it as 'private'
-		.property("sample rate", &Config::OutputSettings::SampleRate)
-		.property("channels", &Config::OutputSettings::Channels)
-		.property("frames per buffer", &Config::OutputSettings::FramesPerBuffer)
+		.property("sample rate", &Config::Settings::Output::SampleRate)
+		.property("channels", &Config::Settings::Output::Channels)
+		.property("frames per buffer", &Config::Settings::Output::FramesPerBuffer)
+		.property("api id", &Config::Settings::Output::ApiId)
+		.property("device id", &Config::Settings::Output::DeviceId)
+		;
+
+	registration::class_<Config::Settings::Midi>("midi")
+		.constructor<>()
+		(
+		)
+		.property("device id", &Config::Settings::Midi::DeviceId)
+		;
+
+	registration::class_<Config::Settings>("settings")
+		.constructor<>()
+		(
+		)
+		.property("output", &Config::Settings::m_Output)
+		.property("midi", &Config::Settings::m_Midi)
 		;
 }
 
@@ -29,19 +50,31 @@ RTTR_REGISTRATION
 //
 void Config::Initialize()
 {
-	// try deserializing
-	OutputSettings output;
-	if (serialization::DeserializeFromFile(s_FilePath, output))
+	// try deserializing the user directory path
+	UserDirPointer userDir;
+	if (serialization::DeserializeFromFile(s_PointerPath, userDir))
 	{
-		m_Output = output;
+		m_UserDir = userDir;
 	}
 	else
 	{
-		LOG("Config::Initialize > unable to deserialize config file to output settings, using defaults", Warning);
+		LOG("Config::Initialize > unable to deserialize pointer to user directory, using default user directory: '" 
+			+ std::string(s_DefaultUserDir) + std::string("'"), Warning);
+	}
+
+	// try deserializing settings
+	Settings settings;
+	if (serialization::DeserializeFromFile(GetUserDirPath() + s_ConfigFileRelativePath, settings))
+	{
+		m_Settings = settings;
+	}
+	else
+	{
+		LOG("Config::Initialize > unable to deserialize config file to settings, using defaults", Warning);
 	}
 
 	// derive settings regardless of whether they where loaded or default
-	m_Output.DeriveSettings();
+	m_Settings.m_Output.DeriveSettings();
 }
 
 //---------------------------------
@@ -51,18 +84,18 @@ void Config::Initialize()
 //
 void Config::Save()
 {
-	if (!serialization::SerializeToFile(s_FilePath, m_Output))
+	if (!serialization::SerializeToFile(GetUserDirPath() + s_ConfigFileRelativePath, m_Settings))
 	{
-		LOG("Config::Save > unable to serialize output settings to config file", Warning);
+		LOG("Config::Save > unable to serialize settings to config file", Warning);
 	}
 }
 
 //-------------------------------------------
-// Config::OutputSettings::DeriveSettings
+// Config::Settings::Output::DeriveSettings
 //
 // Derive some settings from those that where loaded from json
 //
-void Config::OutputSettings::DeriveSettings()
+void Config::Settings::Output::DeriveSettings()
 {
 	BitRate = SampleRate * Channels;
 	TimePerBuffer = static_cast<double>(FramesPerBuffer) / static_cast<double>(SampleRate);

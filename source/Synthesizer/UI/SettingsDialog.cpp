@@ -108,7 +108,7 @@ void SettingsDialog::PopulateApiOptions()
 //
 // Fill the device combo box with options
 //
-void SettingsDialog::PopulateDeviceOptions()
+void SettingsDialog::PopulateDeviceOptions(bool preventDeviceRecreateion)
 {
 	// get the device names
 	std::vector<LowEndAudioManager::T_DeviceIdNamePair> devices;
@@ -130,7 +130,10 @@ void SettingsDialog::PopulateDeviceOptions()
 
 	if (findResultIt != devices.cend())
 	{
-		m_AutoDeviceComboChanged = true; // make sure setting the combobox doesn't trigger device selection
+		if (preventDeviceRecreateion)
+		{
+			m_AutoDeviceComboChanged = true; // make sure setting the combobox doesn't trigger device selection
+		}
 		m_DeviceSelector->set_active(static_cast<int32>(findResultIt - devices.cbegin()));
 	}
 }
@@ -181,7 +184,7 @@ void SettingsDialog::OnApiComboChanged()
 	}
 
 	// make sure the device list is up to date
-	PopulateDeviceOptions();
+	PopulateDeviceOptions(false);
 }
 
 //---------------------------------

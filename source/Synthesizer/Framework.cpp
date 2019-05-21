@@ -253,7 +253,7 @@ void Framework::InitializeUtilities()
 	Config::GetInstance()->Initialize();
 
 	// Log what we loaded
-	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	Config::Settings::Output const& output = Config::GetInstance()->GetOutput();
 	LOG("Output Settings: ");
 	LOG("\tSample Rate       > " + std::to_string(output.SampleRate));
 	LOG("\tChannels          > " + std::to_string(output.Channels));

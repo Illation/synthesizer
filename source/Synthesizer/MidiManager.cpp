@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "MidiManager.h"
 
+#include "Config.h"
+
 
 // Init / deInit
 //////////////////////
@@ -29,33 +31,32 @@ bool MidiManager::InitializeMidi()
 
 	LOG("RtMidi version: " + m_MidiInput->getVersion());
 
+	m_ActivePort = Config::GetInstance()->GetMidi().DeviceId;
+
 	// Check inputs.
 	uint32 numPorts = m_MidiInput->getPortCount();
-	if (numPorts > 0)
+
+	// log our available ports
+	LOG("There are '" + std::to_string(numPorts) + std::string("' MIDI input sources available."));
+	for (uint32 i = 0; i < numPorts; i++) 
 	{
-		// yay we have a midi device
+		LOG("\t Input Port #" + std::to_string(i) + std::string(": '") + m_MidiInput->getPortName(i) + std::string("'"));
+	}
 
-		// log our available ports
-		LOG("There are '" + std::to_string(numPorts) + std::string("' MIDI input sources available."));
-		for (uint32 i = 0; i < numPorts; i++) 
-		{
-			LOG("\t Input Port #" + std::to_string(i) + std::string(": '") + m_MidiInput->getPortName(i) + std::string("'"));
-		}
-
-		// open the port we want
-		m_ActivePort = 0;
+	// open the port we want
+	if (numPorts > 0 && m_ActivePort >= 0)
+	{
 		m_MidiInput->openPort(static_cast<uint32>(m_ActivePort));
-
-		m_MidiInput->setCallback(&MidiManager::OnMidiCallback);
-
-		// Don't ignore sysex, timing, or active sensing messages.
-		m_MidiInput->ignoreTypes(false, false, false);
 	}
 	else
 	{
-		LOG("No MIDI devices found, you can use your keyboard to play notes.");
-		m_ActivePort = s_DeselectedPort;
+		LOG("No active MIDI port set, you can use your keyboard to play notes.");
 	}
+
+	m_MidiInput->setCallback(&MidiManager::OnMidiCallback);
+
+	// Don't ignore sysex, timing, or active sensing messages.
+	m_MidiInput->ignoreTypes(false, false, false);
 
 	LOG("");
 
@@ -159,6 +160,9 @@ void MidiManager::SetActiveDevice(int32 const deviceId)
 	// open the port we want
 	m_ActivePort = deviceId;
 	m_MidiInput->openPort(static_cast<uint32>(m_ActivePort));
+
+	Config::GetInstance()->GetMidi().DeviceId = deviceId;
+	Config::GetInstance()->Save();
 }
 
 // Events

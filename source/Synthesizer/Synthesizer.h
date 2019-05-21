@@ -135,5 +135,5 @@ private:
 
 	std::vector<T_KeyVoicePair> m_Voices;
 
-	Config::OutputSettings const* m_OutputSettings;
+	Config::Settings::Output const* m_OutputSettings;
 };

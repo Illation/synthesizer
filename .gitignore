@@ -6,6 +6,8 @@ Synthesizer.VC.db
 /source/Synthesizer/UI/_generated
 /build/Intermediate
 /bin
+/lib
+/user_data
 /build/x32
 /build/x64
 *.ipch

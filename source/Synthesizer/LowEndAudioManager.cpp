@@ -16,7 +16,20 @@ bool LowEndAudioManager::InitializeAudio(Synthesizer* const synth)
 {
 	m_Synthesizer = synth;
 
-	m_Audio = new RtAudio(); // we could specify the library here
+	// try initializing rt audio with stored API
+	Config::Settings::Output& output = Config::GetInstance()->GetOutput();
+	RtAudio::Api const api = RtAudio::getCompiledApiByName(output.ApiId);
+	if (api == RtAudio::Api::UNSPECIFIED)
+	{
+		m_Audio = new RtAudio();
+		output.ApiId = GetActiveApiId();
+		Config::GetInstance()->Save();
+	}
+	else
+	{
+		m_Audio = new RtAudio(api);
+	}
+
 	if (m_Audio == nullptr)
 	{
 		LOG("LowEndAudioManager::InitializeAudio > Failed to initialize RT Audio!", Warning);
@@ -50,9 +63,18 @@ bool LowEndAudioManager::InitializeAudio(Synthesizer* const synth)
 	uint32 defaultDeviceIdx = m_Audio->getDefaultOutputDevice();
 	LOG("Default device index: '" + std::to_string(defaultDeviceIdx) + std::string("'"));
 
-	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	// try setting the device with stored config data, otherwise set it from default device
+	if (output.DeviceId < 0)
+	{
+		m_Parameters.deviceId = defaultDeviceIdx;
+		output.DeviceId = static_cast<int32>(defaultDeviceIdx);
+		Config::GetInstance()->Save();
+	}
+	else
+	{
+		m_Parameters.deviceId = static_cast<uint32>(output.DeviceId);
+	}
 
-	m_Parameters.deviceId = defaultDeviceIdx;
 	m_Parameters.nChannels = output.Channels;
 
 	m_Options.flags |= RTAUDIO_MINIMIZE_LATENCY;
@@ -189,9 +211,13 @@ void LowEndAudioManager::SetActiveApi(std::string const& apiId)
 		LOG("LowEndAudioManager::SetActiveApi > No sound device found!", LogLevel::Error);
 		return;
 	}
-	m_Parameters.deviceId = m_Audio->getDefaultOutputDevice();
 
-	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	Config::Settings::Output& output = Config::GetInstance()->GetOutput();
+
+	// try setting the device with stored config data, otherwise set it from default device
+	m_Parameters.deviceId = m_Audio->getDefaultOutputDevice();
+	output.DeviceId = static_cast<int32>(m_Parameters.deviceId);
+
 	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
 
 	try
@@ -211,6 +237,8 @@ void LowEndAudioManager::SetActiveApi(std::string const& apiId)
 		OnRtAudioError(error.getType(), error.getMessage());
 		return;
 	}
+
+	output.ApiId = apiId;
 
 	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
 	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
@@ -273,14 +301,12 @@ void LowEndAudioManager::SetActiveDevice(uint32 const deviceId)
 	}
 	m_Parameters.deviceId = deviceId;
 
-	m_Audio->stopStream();
-
 	if (m_Audio->isStreamOpen())
 	{
 		m_Audio->closeStream();
 	}
 
-	Config::OutputSettings const& output = Config::GetInstance()->GetOutput();
+	Config::Settings::Output & output = Config::GetInstance()->GetOutput();
 	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
 
 	try
@@ -300,6 +326,8 @@ void LowEndAudioManager::SetActiveDevice(uint32 const deviceId)
 		OnRtAudioError(error.getType(), error.getMessage());
 		return;
 	}
+
+	output.DeviceId = static_cast<int32>(deviceId);
 
 	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
 	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));

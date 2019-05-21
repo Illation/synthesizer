@@ -1,7 +1,11 @@
 {
-  "outputSettings": {
-    "sample rate": 22050,
-    "channels": 2,
-    "frames per buffer": 16
+  "settings": {
+    "output": {
+      "sample rate": 22050,
+      "channels": 2,
+      "frames per buffer": 256
+    },
+    "midi": {
+    }
   }
 }

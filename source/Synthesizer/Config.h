@@ -10,52 +10,112 @@
 //
 class Config : public Singleton<Config>
 {
+	// Definitions
+	//-----------------
 public:
+
+	static constexpr char s_PointerPath[] = "../config/userDirPointer.json";
+	static constexpr char s_DefaultUserDir[] = "../config/";
+	static constexpr char s_ConfigFileRelativePath[] = "./config.json";
+
 	//---------------------------------
-	// Config::OutputSettings
+	// Config::UserDirPointer
 	//
-	// Configuration for our portaudio output stream
+	// figure out where our user data lives
 	//
-	struct OutputSettings
+	struct UserDirPointer
 	{
-		void DeriveSettings();
-		// Settings loaded from JSON
-		///////////////////////////
-		// We set default values incase loading goes wrong
-		uint32 SampleRate = 22050;
-		uint32 Channels = 2;
-
-		// the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which
-		// tells PortAudio to pick the best, possibly changing, buffer size
-		uint32 FramesPerBuffer = 256;
-
-		// Derived settings after loading data
-		//////////////////////////////////////
-		uint32 BitRate = 0;
-		double TimePerBuffer = 0.0;
-		double TimePerSample = 0.0;
+		std::string m_UserDirPath = s_DefaultUserDir;
 
 		RTTR_ENABLE()
 	};
 
-	OutputSettings const& GetOutput() const { return m_Output; }
+	//---------------------------------
+	// Config::Settings
+	//
+	// Configuration settings
+	//
+	class Settings
+	{
+	public:
+		//---------------------------------
+		// Config::Settings::Output
+		//
+		// Configuration for our rt audio output stream
+		//
+		struct Output
+		{
+			void DeriveSettings();
+			// Settings loaded from JSON
+			///////////////////////////
+			// We set default values incase loading goes wrong
+			uint32 SampleRate = 22050;
+			uint32 Channels = 2;
+
+			// the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which
+			// tells PortAudio to pick the best, possibly changing, buffer size
+			uint32 FramesPerBuffer = 256;
+
+			std::string ApiId;
+			int32 DeviceId = -1;
+
+			// Derived settings after loading data
+			//////////////////////////////////////
+			uint32 BitRate = 0;
+			double TimePerBuffer = 0.0;
+			double TimePerSample = 0.0;
+
+			RTTR_ENABLE()
+		};
+		//---------------------------------
+		// Config::Settings::Midi
+		//
+		// Configuration for Midi devices
+		//
+		struct Midi
+		{
+			int32 DeviceId = -1;
+
+			RTTR_ENABLE()
+		};
+
+		Output m_Output;
+		Midi m_Midi;
+
+		RTTR_ENABLE()
+	};
+
+private:
+	friend class Singleton<Config>;
+
+
+	// Default constructor and destructor
+	//-----------------
+	Config() = default;
+	virtual ~Config() = default;
+
+
+	// Public interface
+	//-----------------
+public:
+	std::string const& GetUserDirPath() const { return m_UserDir.m_UserDirPath; }
+
+	Settings::Output const& GetOutput() const { return m_Settings.m_Output; }
+	Settings::Output & GetOutput() { return m_Settings.m_Output; }
+
+	Settings::Midi const& GetMidi() const { return m_Settings.m_Midi; }
+	Settings::Midi & GetMidi() { return m_Settings.m_Midi; }
 
 	// initialization
 	void Initialize();
 	void Save();
 
-private:
-	friend class Singleton<Config>;
-
-	// Defualt constructor and destructor
-	Config() = default;
-	virtual ~Config() = default;
-
 	// DATA
 	///////
+private:
 
-	static constexpr char s_FilePath[] = "../config/config.json";
+	UserDirPointer m_UserDir;
 
-	OutputSettings m_Output = OutputSettings();
+	Settings m_Settings = Settings();
 };
 

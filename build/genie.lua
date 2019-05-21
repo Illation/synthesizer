@@ -37,6 +37,19 @@ function outputDirectories(_project)
 	configuration {}
 end
 
+function libOutputDirectories(_library)
+	local cfgs = configurations()
+	local p = platforms()
+	for i = 1, #cfgs do
+		for j = 1, #p do
+			configuration { cfgs[i], p[j] }
+				targetdir("../lib/" .. cfgs[i] .. "_" .. p[j] .. "/" .. _library)
+				objdir("../synthesizer/build/Intermediate/" .. cfgs[i]  .. "/" .. _library)		--seems like the platform will automatically be added
+		end
+	end
+	configuration {}
+end
+
 --platform specific library paths
 function platformLibraries()--libraries built specifically for debug or release
 	local cfgs = configurations()
@@ -236,7 +249,7 @@ project "Vendor"
 
 	location "../source/Vendor"
 	
-	outputDirectories("Vendor")
+	libOutputDirectories("Vendor")
 
     files { 
 		path.join(SOURCE_DIR, "Vendor/**.cpp"), 
