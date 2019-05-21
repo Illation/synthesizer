@@ -29,21 +29,32 @@ RTTR_REGISTRATION
 //
 void Config::Initialize()
 {
-	rttr::type t = rttr::type::get<Config::OutputSettings>();
-
 	// try deserializing
 	OutputSettings output;
-	if (serialization::DeserializeFromFile("../config/config.json", output))
+	if (serialization::DeserializeFromFile(s_FilePath, output))
 	{
 		m_Output = output;
 	}
 	else
 	{
-		LOG("Config::LoadFromJSON > unable to deserialize config file to output settings, using defaults", Warning);
+		LOG("Config::Initialize > unable to deserialize config file to output settings, using defaults", Warning);
 	}
 
 	// derive settings regardless of whether they where loaded or default
 	m_Output.DeriveSettings();
+}
+
+//---------------------------------
+// Config::Initialize
+//
+// Save the configuration to disk
+//
+void Config::Save()
+{
+	if (!serialization::SerializeToFile(s_FilePath, m_Output))
+	{
+		LOG("Config::Save > unable to serialize output settings to config file", Warning);
+	}
 }
 
 //-------------------------------------------

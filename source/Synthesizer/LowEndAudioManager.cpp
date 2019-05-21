@@ -217,6 +217,8 @@ void LowEndAudioManager::SetActiveApi(std::string const& apiId)
 	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
 
 	m_Audio->startStream();
+
+	Config::GetInstance()->Save();
 }
 
 //---------------------------------
@@ -304,6 +306,8 @@ void LowEndAudioManager::SetActiveDevice(uint32 const deviceId)
 	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
 
 	m_Audio->startStream();
+
+	Config::GetInstance()->Save();
 }
 
 

@@ -5,9 +5,10 @@
 #include <rttr/type>
 
 #include <FileSystem/Entry.h>
-#include <FileSystem/JSONparser.h>
 #include <FileSystem/FileUtil.h>
 #include <FileSystem/JSONdom.h>
+#include <FileSystem/JSONparser.h>
+#include <FileSystem/JsonWriter.h>
 
 // This code is heavily based on https://github.com/rttrorg/rttr/tree/master/src/examples/json_serialization
 
@@ -22,7 +23,10 @@ namespace serialization
 	//----------------
 
 	template<typename T>
-	JSON::Object* SerializeToJson(T* const serialObject);
+	bool SerializeToFile(std::string const& filePath, T const& serialObject);
+
+	template<typename T>
+	JSON::Value* SerializeToJson(T const& serialObject);
 
 	// Deserialization
 	//-----------------
@@ -42,12 +46,12 @@ namespace serialization
 	//---------------------
 
 	// serialization
-	bool ToJsonRecursive(const rttr::instance& inst, JSON::Object* outJObject);
+	bool ToJsonRecursive(const rttr::instance& inst, JSON::Value*& outJObject);
 
-	bool VariantToJsonValue(rttr::variant const& var, JSON::Value* outVal);
-	bool AtomicTypeToJsonValue(rttr::type const& valueType, rttr::variant  const& var, JSON::Value* outVal);
-	bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value* outVal);
-	bool AssociativeContainerToJsonArray(const rttr::variant_associative_view& view, JSON::Value* outVal);
+	bool VariantToJsonValue(rttr::variant const& var, JSON::Value*& outVal);
+	bool AtomicTypeToJsonValue(rttr::type const& valueType, rttr::variant  const& var, JSON::Value*& outVal);
+	bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value*& outVal);
+	bool AssociativeContainerToJsonArray(const rttr::variant_associative_view& view, JSON::Value*& outVal);
 
 	// deserialization
 	rttr::variant ExtractBasicTypes(JSON::Value const* const jVal);

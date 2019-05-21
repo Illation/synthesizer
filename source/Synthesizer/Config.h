@@ -42,6 +42,7 @@ public:
 
 	// initialization
 	void Initialize();
+	void Save();
 
 private:
 	friend class Singleton<Config>;
@@ -52,6 +53,8 @@ private:
 
 	// DATA
 	///////
+
+	static constexpr char s_FilePath[] = "../config/config.json";
 
 	OutputSettings m_Output = OutputSettings();
 };

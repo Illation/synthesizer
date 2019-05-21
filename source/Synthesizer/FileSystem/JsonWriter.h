@@ -23,7 +23,7 @@ private:
 	bool WriteValue(Value const* const jVal);
 
 	bool WriteNumber(Number const* const jNum);
-	bool WriteString(String const* const jString);
+	void WriteString(std::string const& str);
 
 	bool WriteArray(Array const* const jArray);
 

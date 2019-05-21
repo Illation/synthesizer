@@ -13,9 +13,10 @@ namespace serialization {
 //
 // Recursively convert an rttr::instance to a json object - returns false if any properties fail to serialize
 //
-bool ToJsonRecursive(const rttr::instance& inst, JSON::Object* outJObject)
+bool ToJsonRecursive(const rttr::instance& inst, JSON::Value*& outJVal)
 {
-	outJObject = new JSON::Object();
+	JSON::Object* outJObject = new JSON::Object();
+	outJVal = outJObject;
 
 	rttr::instance instObj = inst.get_type().get_raw_type().is_wrapper() ? inst.get_wrapped_instance() : inst;
 
@@ -57,7 +58,7 @@ bool ToJsonRecursive(const rttr::instance& inst, JSON::Object* outJObject)
 //
 // Recursively convert an rttr::variant to a json value, figuring out it's type in the process
 //
-bool VariantToJsonValue(rttr::variant const& var, JSON::Value* outVal)
+bool VariantToJsonValue(rttr::variant const& var, JSON::Value*& outVal)
 {
 	rttr::type valueType = var.get_type();
 	rttr::type wrappedType = valueType.is_wrapper() ? valueType.get_wrapped_type() : valueType;
@@ -91,7 +92,7 @@ bool VariantToJsonValue(rttr::variant const& var, JSON::Value* outVal)
 	{
 		if (!(wrappedType.get_properties().empty())) // try converting the variant to a JSON object
 		{
-			if (!ToJsonRecursive(var, static_cast<JSON::Object*>(outVal)))
+			if (!ToJsonRecursive(var, outVal))
 			{
 				LOG("VariantToJsonValue > Failed to convert variant to JSON object, typeName: '" + wrappedType.get_name().to_string() 
 					+ std::string("'!"), LogLevel::Warning);
@@ -126,7 +127,7 @@ bool VariantToJsonValue(rttr::variant const& var, JSON::Value* outVal)
 // Convert a handful of basic supported "leaf" types to Atomic JSON types. Might have to add more in the future. 
 // If value type is not atomic it returns false. If value type is atomic but not supported it returns true and outVal will be of type JSON_Null
 //
-bool AtomicTypeToJsonValue(rttr::type const& valueType, rttr::variant const& var, JSON::Value* outVal)
+bool AtomicTypeToJsonValue(rttr::type const& valueType, rttr::variant const& var, JSON::Value*& outVal)
 {
 	if (valueType.is_arithmetic()) // basic arithmetic types get converted to numbers or bools
 	{
@@ -277,7 +278,7 @@ bool AtomicTypeToJsonValue(rttr::type const& valueType, rttr::variant const& var
 //
 // Converts a sequential view to a JSON array
 //
-bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value* outVal)
+bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value*& outVal)
 {
 	JSON::Array* outArr = new JSON::Array();
 	outVal = outArr;
@@ -315,7 +316,7 @@ bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value* ou
 			}
 			else // object
 			{
-				if (!ToJsonRecursive(wrappedVar, static_cast<JSON::Object*>(jItem)))
+				if (!ToJsonRecursive(wrappedVar, jItem))
 				{
 					LOG("ArrayToJsonArray > failed to convert array element to json object, typeName: '" + valueType.get_name().to_string()
 						+ std::string("'!"), LogLevel::Warning);
@@ -336,7 +337,7 @@ bool ArrayToJsonArray(const rttr::variant_sequential_view& view, JSON::Value* ou
 //
 // Converts a associative view to a JSON array of objects containing keys and values. If any item fails to be serialized this returns false
 //
-bool AssociativeContainerToJsonArray(const rttr::variant_associative_view& view, JSON::Value* outVal)
+bool AssociativeContainerToJsonArray(const rttr::variant_associative_view& view, JSON::Value*& outVal)
 {
 	static const std::string keyName("key");
 	static const std::string valueName("value");

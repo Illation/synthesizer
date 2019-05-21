@@ -6,13 +6,80 @@
 
 namespace serialization {
 
+
+//---------------------------------
+// SerializeToFile
+//
+// Write a file from the templated type using reflection data. Returns false if serialization is unsuccsesful.
+//
+template<typename T>
+bool SerializeToFile(std::string const& filePath, T const& serialObject)
+{
+	// Open the file
+	File* file = new File(filePath, nullptr);
+	std::string const ext(file->GetExtension());
+
+	// convert the object to the files data format, depending on the extension
+	bool serializeSuccess = false;
+	std::vector<uint8> fileContent;
+	if (ext == "json")
+	{
+		// first convert to the json document object model
+		JSON::Object* root = static_cast<JSON::Object*>(SerializeToJson(serialObject));
+		if (root)
+		{
+			// then write it to a string
+			JSON::Writer writer(false);
+			if (writer.Write(root))
+			{
+				// convert that string to a byte array
+				fileContent = FileUtil::FromText(writer.GetResult()); // #todo this shouldn't copy twice, pass content byte vector as reference
+				serializeSuccess = true;
+			}
+			else
+			{
+				LOG("SerializeToFile > unable to write JSON DOM to string", Warning);
+			}
+		}
+		else
+		{
+			LOG("SerializeToFile > unable to serialize object to JSON DOM!", Warning);
+		}
+	}
+	else
+	{
+		LOG("SerializeToFile > File type '" + ext + std::string("' not supported!"), Warning);
+	}
+
+	// write the content to the file
+	if (serializeSuccess)
+	{
+		FILE_ACCESS_FLAGS outFlags;
+		outFlags.SetFlags(FILE_ACCESS_FLAGS::FLAGS::Create | FILE_ACCESS_FLAGS::FLAGS::Exists); // create a new file or overwrite the existing one
+		if (!file->Open(FILE_ACCESS_MODE::Write, outFlags))
+		{
+			LOG("SerializeToFile > unable to open file '" + filePath + std::string("' for writing!"), Warning);
+			serializeSuccess = false;
+		}
+
+		if (serializeSuccess && !file->Write(fileContent))
+		{
+			LOG("SerializeToFile > Writing content to file failed!", Warning);
+			serializeSuccess = false;
+		}
+	}
+
+	SafeDelete(file);
+	return serializeSuccess;
+}
+
 //---------------------------------
 // SerializeToJson
 //
 // Create a JSON::Object from the templated type using reflection data. Returns nullptr if serialization is unsuccsesful.
 //
 template<typename T>
-JSON::Object* SerializeToJson(T* const serialObject)
+JSON::Value* SerializeToJson(T const& serialObject)
 {
 	rttr::instance inst(serialObject);
 	if (!inst.is_valid())
@@ -21,11 +88,19 @@ JSON::Object* SerializeToJson(T* const serialObject)
 		return nullptr;
 	}
 
-	JSON::Object* outObject = nullptr;
+	JSON::Value* outObject = nullptr;
 
-	ToJsonRecursive(inst, outObject);
+	if (ToJsonRecursive(inst, outObject))
+	{
+		JSON::Object* root = new JSON::Object();
 
-	return outObject;
+		root->value.emplace_back(inst.get_type().get_name().to_string(), outObject);
+
+		return static_cast<JSON::Value*>(root);
+	}
+
+	SafeDelete(outObject);
+	return nullptr;
 }
 
 
