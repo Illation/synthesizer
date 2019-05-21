@@ -2,7 +2,7 @@
 
 #include "Synthesizer.h"
 
-#include <Vendor/RtAudio.h>
+#include <Vendor/RtAudio/RtAudio.h>
 
 //---------------------------------
 // LowEndAudioManager

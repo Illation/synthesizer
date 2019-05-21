@@ -174,7 +174,10 @@ project "Synthesizer"
 	--
 	-- GTKmm
     links{ 
-		"atk-1.0" 
+		--Internal static links
+		"Vendor"
+		--GTK
+		, "atk-1.0" 
 		, "atkmm" 
 		, "cairomm-1.0" 
 		, "epoxy" 
@@ -208,7 +211,7 @@ project "Synthesizer"
 
 	--additional includedirs
 	local ProjBase = path.join(SOURCE_DIR, "Synthesizer") 
-	includedirs { path.join(ProjBase, "../Synthesizer") }
+	includedirs { SOURCE_DIR, ProjBase }
 
 	--Source files
     files { 
@@ -221,9 +224,25 @@ project "Synthesizer"
 	}
 
 	nopch { 	
-		path.join(SOURCE_DIR, "Synthesizer/Vendor/**.cpp"),
 		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.c"),  
-	}	--vendor code shouldn't use precompiled headers
+	}	--vendor and generated code shouldn't use precompiled headers
 
 	pchheader "stdafx.h"
 	pchsource "../source/Synthesizer/stdafx.cpp"
+
+-- all non prebuilt vendor libraries go here
+project "Vendor"
+    kind "StaticLib"
+
+	location "../source/Vendor"
+	
+	outputDirectories("Vendor")
+
+    files { 
+		path.join(SOURCE_DIR, "Vendor/**.cpp"), 
+		path.join(SOURCE_DIR, "Vendor/**.h"), 
+	}
+
+	--additional includedirs
+	local ProjBase = path.join(SOURCE_DIR, "Vendor") 
+	includedirs { ProjBase }

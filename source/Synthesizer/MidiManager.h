@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MidiListener.h"
-#include <Vendor/RtMidi.h>
+#include <Vendor/RtMidi/RtMidi.h>
 
 
 //---------------------------------
