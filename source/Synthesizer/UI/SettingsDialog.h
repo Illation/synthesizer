@@ -25,12 +25,14 @@ public:
 
 	void PopulateApiOptions();
 	void PopulateDeviceOptions(bool preventDeviceRecreateion = true);
+	void PopulateSampleRateOptions();
 
 	void PopulateMidiOptions();
 protected:
 
 	void OnApiComboChanged();
 	void OnDeviceComboChanged();
+	void OnSampleRateComboChanged();
 
 	void OnMidiComboChanged();
 
@@ -48,4 +50,7 @@ protected:
 
 	Gtk::ComboBoxText* m_MidiSelector = nullptr;
 	bool m_AutoMidiComboChanged = false;
+
+	Gtk::ComboBoxText* m_SampleRateSelector = nullptr;
+	bool m_AutoSampleRateComboChanged = false;
 };

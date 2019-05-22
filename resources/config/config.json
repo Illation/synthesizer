@@ -1,7 +1,7 @@
 {
   "settings": {
     "output": {
-      "sample rate": 22050,
+      "sample rate": 44100,
       "channels": 2,
       "frames per buffer": 256
     },

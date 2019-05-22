@@ -47,86 +47,40 @@ bool LowEndAudioManager::InitializeAudio(Synthesizer* const synth)
 		return false;
 	}
 
-	LOG("There are '" + std::to_string(deviceCount) + std::string("' audio devices available."));
-
-	// Scan through devices for various capabilities
-	for (uint32 deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++)
+	// try setting the device with stored config data, otherwise set it from default device
+	if (output.DeviceId >= 0 && static_cast<uint32>(output.DeviceId) < deviceCount)
 	{
-		RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(deviceIdx);
+		m_Parameters.deviceId = static_cast<uint32>(output.DeviceId);
+	}
+	else
+	{
+		uint32 defaultDeviceIdx = m_Audio->getDefaultOutputDevice();
+		RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(defaultDeviceIdx);
 		if (info.probed == true)
 		{
-			LOG("\t Device #" + std::to_string(deviceIdx) + std::string(": '") + info.name + std::string("'"));
+			LOG("No preferred audio device, using default: #" + std::to_string(defaultDeviceIdx) + std::string(": '") + info.name + std::string("'"));
 		}
-	}
 
-	// settings for our audio stream
-	uint32 defaultDeviceIdx = m_Audio->getDefaultOutputDevice();
-	LOG("Default device index: '" + std::to_string(defaultDeviceIdx) + std::string("'"));
-
-	// try setting the device with stored config data, otherwise set it from default device
-	if (output.DeviceId < 0)
-	{
 		m_Parameters.deviceId = defaultDeviceIdx;
 		output.DeviceId = static_cast<int32>(defaultDeviceIdx);
 		Config::GetInstance()->Save();
 	}
-	else
-	{
-		m_Parameters.deviceId = static_cast<uint32>(output.DeviceId);
-	}
 
 	m_Parameters.nChannels = output.Channels;
 
-	m_Options.flags |= RTAUDIO_MINIMIZE_LATENCY;
-	if (false)
-	{
-		m_Options.flags |= RTAUDIO_NONINTERLEAVED;
-	}
-	if (false) // exclusive device access
-	{
-		m_Options.flags |= RTAUDIO_HOG_DEVICE;
-	}
-	if (false) // some scheduling stuff I don't understand quite yet
-	{
-		m_Options.flags |= RTAUDIO_SCHEDULE_REALTIME;
-		m_Options.priority = 900000000;
-	}
-	if (m_Audio->getCurrentApi() == RtAudio::LINUX_ALSA)
-	{
-		m_Options.flags |= RTAUDIO_ALSA_USE_DEFAULT;
-	}
-	m_Options.streamName = "Synthesizer";
-	m_Options.numberOfBuffers = 0; // as low as possible
+	// set up sample rate from config
+	m_CurrentSampleRate = output.SampleRate;
 
-	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
+	ValidateCurrentSampleRate();
 
-	// open a stream with all our settings
-	try
+	SetupStreamOptions();
+
+	if (!OpenAndStartStream())
 	{
-		m_Audio->openStream(&m_Parameters,
-			nullptr,
-			RTAUDIO_SINT16,
-			output.SampleRate * output.Channels,
-			&framesPerBuffer,
-			&LowEndAudioManager::AudioCallback<int16>,
-			m_Synthesizer,
-			&m_Options,
-			&LowEndAudioManager::OnRtAudioError);
-	}
-	catch (RtAudioError& error)
-	{
-		OnRtAudioError(error.getType(), error.getMessage());
 		return false;
 	}
 
-	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
-	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
-	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
-
-	m_Audio->startStream();
-
 	LOG("");
-
 	return true;
 }
 
@@ -218,34 +172,14 @@ void LowEndAudioManager::SetActiveApi(std::string const& apiId)
 	m_Parameters.deviceId = m_Audio->getDefaultOutputDevice();
 	output.DeviceId = static_cast<int32>(m_Parameters.deviceId);
 
-	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
+	ValidateCurrentSampleRate();
 
-	try
+	if (!OpenAndStartStream())
 	{
-		m_Audio->openStream(&m_Parameters,
-			nullptr,
-			RTAUDIO_SINT16,
-			output.SampleRate * output.Channels,
-			&framesPerBuffer,
-			&LowEndAudioManager::AudioCallback<int16>,
-			m_Synthesizer,
-			&m_Options,
-			&LowEndAudioManager::OnRtAudioError);
-	}
-	catch (RtAudioError& error)
-	{
-		OnRtAudioError(error.getType(), error.getMessage());
 		return;
 	}
 
 	output.ApiId = apiId;
-
-	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
-	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
-	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
-
-	m_Audio->startStream();
-
 	Config::GetInstance()->Save();
 }
 
@@ -263,13 +197,9 @@ void LowEndAudioManager::GetAllPossibleDevices(std::vector<T_DeviceIdNamePair>& 
 	for (uint32 deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++)
 	{
 		RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(deviceIdx);
-		if (info.probed == true)
+		if (info.probed == true && info.outputChannels > 0)
 		{
 			deviceIdNamePairs.emplace_back(deviceIdx, info.name);
-		}
-		else
-		{
-			deviceIdNamePairs.emplace_back(deviceIdx, "");
 		}
 	}
 }
@@ -301,43 +231,79 @@ void LowEndAudioManager::SetActiveDevice(uint32 const deviceId)
 	}
 	m_Parameters.deviceId = deviceId;
 
+	ValidateCurrentSampleRate();
+
 	if (m_Audio->isStreamOpen())
 	{
 		m_Audio->closeStream();
 	}
 
-	Config::Settings::Output & output = Config::GetInstance()->GetOutput();
-	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
-
-	try
+	if (!OpenAndStartStream())
 	{
-		m_Audio->openStream(&m_Parameters,
-			nullptr,
-			RTAUDIO_SINT16,
-			output.SampleRate * output.Channels,
-			&framesPerBuffer,
-			&LowEndAudioManager::AudioCallback<int16>,
-			m_Synthesizer,
-			&m_Options,
-			&LowEndAudioManager::OnRtAudioError);
-	}
-	catch (RtAudioError& error)
-	{
-		OnRtAudioError(error.getType(), error.getMessage());
 		return;
 	}
 
-	output.DeviceId = static_cast<int32>(deviceId);
-
-	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
-	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
-	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
-
-	m_Audio->startStream();
-
+	Config::GetInstance()->GetOutput().DeviceId = static_cast<int32>(deviceId);
 	Config::GetInstance()->Save();
 }
 
+//---------------------------------
+// LowEndAudioManager::GetAllPossibleSampleRates
+//
+// List all sample rates supported by the selected device
+//
+void LowEndAudioManager::GetAllPossibleSampleRates(std::vector<uint32>& sampleRates) const
+{
+	sampleRates.clear();
+
+	RtAudio::DeviceInfo const info = m_Audio->getDeviceInfo(m_Parameters.deviceId);
+	if (info.probed)
+	{
+		sampleRates = info.sampleRates;
+	}
+}
+
+//---------------------------------
+// LowEndAudioManager::SetActiveSampleRate
+//
+// Set the sample rate for the active device
+//
+void LowEndAudioManager::SetActiveSampleRate(uint32 const sampleRate)
+{
+	RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(m_Parameters.deviceId);
+	if (!info.probed)
+	{
+		LOG("LowEndAudioManager::SetActiveSampleRate > failed to get device info", LogLevel::Warning);
+		return;
+	}
+
+	std::vector<uint32> sampleRates = info.sampleRates;
+	if (std::find(sampleRates.cbegin(), sampleRates.cend(), m_CurrentSampleRate) != sampleRates.cend())
+	{
+		m_CurrentSampleRate = sampleRate;
+	}
+	else
+	{
+		LOG("LowEndAudioManager::SetActiveSampleRate > sample rate '" + std::to_string(sampleRate)
+			+ std::string("' is not supported by '") + info.name + std::string("'"), LogLevel::Warning);
+
+		return;
+	}
+
+	if (m_Audio->isStreamOpen())
+	{
+		m_Audio->closeStream();
+	}
+
+	if (!OpenAndStartStream())
+	{
+		return;
+	}
+
+	Config::GetInstance()->GetOutput().SampleRate = sampleRate;
+	Config::GetInstance()->GetOutput().DeriveSettings();
+	Config::GetInstance()->Save();
+}
 
 //---------------------------------
 // LowEndAudioManager::OnRtAudioError
@@ -357,4 +323,96 @@ void LowEndAudioManager::OnRtAudioError(RtAudioError::Type type, std::string con
 	}
 
 	LOG(errorText, logLevel);
+}
+
+//---------------------------------
+// LowEndAudioManager::OpenAndStartStream
+//
+// Start the stream with the settings we set up earlier and start it
+//
+bool LowEndAudioManager::OpenAndStartStream()
+{
+	Config::Settings::Output & output = Config::GetInstance()->GetOutput();
+	uint32 framesPerBuffer = output.FramesPerBuffer; // RtAudios underlying API might change this value
+
+	try
+	{
+		m_Audio->openStream(&m_Parameters,
+			nullptr,
+			RTAUDIO_SINT16,
+			m_CurrentSampleRate,
+			&framesPerBuffer,
+			&LowEndAudioManager::AudioCallback<int16>,
+			m_Synthesizer,
+			&m_Options,
+			&LowEndAudioManager::OnRtAudioError);
+	}
+	catch (RtAudioError& error)
+	{
+		OnRtAudioError(error.getType(), error.getMessage());
+		return false;
+	}
+
+	LOG("Opened a stream with '" + std::to_string(framesPerBuffer) + std::string("' frames per buffer."));
+	LOG("\tNumber of buffers in this stream: '" + std::to_string(m_Options.numberOfBuffers) + std::string("'"));
+	LOG("\tStream callbackFn priority: '" + std::to_string(m_Options.priority) + std::string("'"));
+
+	m_Audio->startStream();
+
+	return true;
+}
+
+//---------------------------------
+// LowEndAudioManager::SetupStreamOptions
+//
+// Set stream options, focused on low latency
+//
+void LowEndAudioManager::SetupStreamOptions()
+{
+	m_Options.flags |= RTAUDIO_MINIMIZE_LATENCY;
+	if (false)
+	{
+		m_Options.flags |= RTAUDIO_NONINTERLEAVED;
+	}
+	if (false) // exclusive device access
+	{
+		m_Options.flags |= RTAUDIO_HOG_DEVICE;
+	}
+	if (false) // some scheduling stuff I don't understand quite yet
+	{
+		m_Options.flags |= RTAUDIO_SCHEDULE_REALTIME;
+		m_Options.priority = 900000000;
+	}
+	if (m_Audio->getCurrentApi() == RtAudio::LINUX_ALSA)
+	{
+		m_Options.flags |= RTAUDIO_ALSA_USE_DEFAULT;
+	}
+	m_Options.streamName = "Synthesizer";
+	m_Options.numberOfBuffers = 0; // as low as possible
+}
+
+//---------------------------------
+// LowEndAudioManager::ValidateCurrentSampleRate
+//
+// Check the set sample rate works for the current device, if not switch and save it to config
+//
+void LowEndAudioManager::ValidateCurrentSampleRate()
+{
+	RtAudio::DeviceInfo info = m_Audio->getDeviceInfo(m_Parameters.deviceId);
+	if (info.probed == true)
+	{
+		std::vector<uint32> sampleRates = info.sampleRates;
+		if (std::find(sampleRates.cbegin(), sampleRates.cend(), m_CurrentSampleRate) == sampleRates.cend())
+		{
+			LOG("LowEndAudioManager::ValidateCurrentSampleRate > sample rate '" + std::to_string(m_CurrentSampleRate) 
+				+ std::string("' is not supported by '") + info.name + std::string("' - switching to '") 
+				+ std::to_string(info.preferredSampleRate) + std::string("'"), LogLevel::Warning);
+
+			m_CurrentSampleRate = info.preferredSampleRate;
+
+			Config::GetInstance()->GetOutput().SampleRate = m_CurrentSampleRate;
+			Config::GetInstance()->GetOutput().DeriveSettings();
+			Config::GetInstance()->Save();
+		}
+	}
 }

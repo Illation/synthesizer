@@ -36,6 +36,13 @@ SettingsDialog::SettingsDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::
 	}
 	m_DeviceSelector->signal_changed().connect(sigc::mem_fun(*this, &SettingsDialog::OnDeviceComboChanged));
 
+	m_RefBuilder->get_widget("sampleRate", m_SampleRateSelector);
+	if (!m_SampleRateSelector)
+	{
+		LOG("SettingsDialog::SettingsDialog > No 'sampleRate' object in prefs.ui!", LogLevel::Error);
+	}
+	m_SampleRateSelector->signal_changed().connect(sigc::mem_fun(*this, &SettingsDialog::OnSampleRateComboChanged));
+
 	// Midi
 	m_RefBuilder->get_widget("midi", m_MidiSelector);
 	if (!m_MidiSelector)
@@ -66,6 +73,7 @@ SettingsDialog* SettingsDialog::create(Gtk::Window& parent)
 	dialog->set_transient_for(parent);
 	dialog->PopulateApiOptions();
 	dialog->PopulateDeviceOptions();
+	dialog->PopulateSampleRateOptions();
 	dialog->PopulateMidiOptions();
 
 	return dialog;
@@ -139,6 +147,35 @@ void SettingsDialog::PopulateDeviceOptions(bool preventDeviceRecreateion)
 }
 
 //---------------------------------
+// SettingsDialog::PopulateSampleRateOptions
+//
+// Fill the sample rate combo box with options
+//
+void SettingsDialog::PopulateSampleRateOptions()
+{
+	// get the sample rates
+	std::vector<uint32> sampleRates;
+	LowEndAudioManager::GetInstance()->GetAllPossibleSampleRates(sampleRates);
+
+	// populate the combobox with them
+	m_SampleRateSelector->remove_all();
+	for (uint32 const sampleRate : sampleRates)
+	{
+		m_SampleRateSelector->append(Glib::ustring(std::to_string(sampleRate)));
+	}
+
+	// set the currently active device in the combobox
+	uint32 currentSampleRate(LowEndAudioManager::GetInstance()->GetCurrentSampleRate());
+	auto findResultIt = std::find(sampleRates.cbegin(), sampleRates.cend(), currentSampleRate);
+
+	if (findResultIt != sampleRates.cend())
+	{
+		m_AutoSampleRateComboChanged = true; // make sure setting the combobox doesn't trigger device selection
+		m_SampleRateSelector->set_active(static_cast<int32>(findResultIt - sampleRates.cbegin()));
+	}
+}
+
+//---------------------------------
 // SettingsDialog::PopulateMidiOptions
 //
 // Fill the midi combo box with options
@@ -207,6 +244,32 @@ void SettingsDialog::OnDeviceComboChanged()
 		int32 deviceId = std::stoi(deviceIdString.raw());
 
 		LowEndAudioManager::GetInstance()->SetActiveDevice(static_cast<uint32>(deviceId));
+	}
+
+	// make sure the sample rate list is up to date
+	PopulateSampleRateOptions();
+}
+
+//---------------------------------
+// SettingsDialog::OnSampleRateComboChanged
+//
+// What happens when the user selects a different sample rate
+//
+void SettingsDialog::OnSampleRateComboChanged()
+{
+	// we don't want to recreate the audio device if this was automatically selected
+	if (m_AutoSampleRateComboChanged)
+	{
+		m_AutoSampleRateComboChanged = false;
+		return;
+	}
+
+	Glib::ustring sampleRateString = m_SampleRateSelector->get_active_text();
+	if (!(sampleRateString.empty()))
+	{
+		int32 sampleRate = std::stoi(sampleRateString.raw());
+
+		LowEndAudioManager::GetInstance()->SetActiveSampleRate(static_cast<uint32>(sampleRate));
 	}
 }
 

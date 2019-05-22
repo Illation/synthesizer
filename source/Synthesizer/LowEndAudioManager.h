@@ -44,6 +44,11 @@ public:
 	uint32 GetActiveDevice() const;
 	void SetActiveDevice(uint32 const deviceId);
 
+	// format
+	void GetAllPossibleSampleRates(std::vector<uint32>& sampleRates) const;
+	uint32 GetCurrentSampleRate() const { return m_CurrentSampleRate; }
+	void SetActiveSampleRate(uint32 const sampleRate);
+
 protected:
 	// audio stream callback fn
 	//--------------------------
@@ -57,6 +62,12 @@ protected:
 
 	static void OnRtAudioError(RtAudioError::Type type, std::string const& errorText);
 
+private:
+
+	bool OpenAndStartStream();
+	void SetupStreamOptions();
+	void ValidateCurrentSampleRate();
+
 	// Data
 	////////
 
@@ -64,6 +75,7 @@ private:
 	RtAudio* m_Audio;
 	RtAudio::StreamParameters m_Parameters;
 	RtAudio::StreamOptions m_Options;
+	uint32 m_CurrentSampleRate = 0;
 
 	Synthesizer* m_Synthesizer;
 };
