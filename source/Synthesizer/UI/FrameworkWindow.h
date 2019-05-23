@@ -5,6 +5,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/stack.h>
 #include <giomm/settings.h>
+#include <gtkmm/glarea.h>
 
 //forward declarations
 class Gio::File;
@@ -24,12 +25,15 @@ public:
 
 	void OpenFileView(Glib::RefPtr<Gio::File> const& file);
 
-private:
-
-	// UI
-	void InitializeGTK();
+	void Redraw();
 
 protected:
+
+	void OnRealize();
+	void OnUnrealize();
+	bool OnRender(const Glib::RefPtr<Gdk::GLContext>& context);
+
+private:
 
 	// Data
 	/////////
@@ -37,4 +41,8 @@ protected:
 	Glib::RefPtr<Gtk::Builder> m_RefBuilder;
 	Glib::RefPtr<Gio::Settings> m_Settings;
 	Gtk::Stack* m_Stack;
+
+	Gtk::GLArea* m_GLArea;
+
+	float m_Timer = 0.f;
 };

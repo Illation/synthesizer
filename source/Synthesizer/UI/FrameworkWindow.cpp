@@ -7,6 +7,7 @@
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>
 
+#include <epoxy/gl.h>
 
 //====================
 // Framework Window
@@ -32,7 +33,34 @@ FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Buil
 	m_Settings = Gio::Settings::create("com.leah-lindner.synthesizer");
 	m_Settings->bind("transition", m_Stack->property_transition_type());
 
-	InitializeGTK();
+	m_RefBuilder->get_widget("glArea", m_GLArea);
+	if (!m_GLArea)
+	{
+		LOG("SettingsDialog::FrameworkWindow > No 'glArea' object in window.ui!", LogLevel::Error);
+	}
+	m_GLArea->signal_realize().connect(sigc::mem_fun(*this, &FrameworkWindow::OnRealize));
+	m_GLArea->signal_unrealize().connect(sigc::mem_fun(*this, &FrameworkWindow::OnUnrealize), false);
+	m_GLArea->signal_render().connect(sigc::mem_fun(*this, &FrameworkWindow::OnRender), false);
+
+	// listen for keyboard input
+	// on press
+	auto keyPressedCallback = [](GdkEventKey* evnt) -> bool
+	{
+		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
+		return false;
+	};
+	signal_key_press_event().connect(keyPressedCallback, false);
+
+	// on release
+	auto keyReleasedCallback = [](GdkEventKey* evnt) -> bool
+	{
+		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
+		return false;
+	};
+	signal_key_release_event().connect(keyReleasedCallback, false);
+
+	//show all the widgets
+	show_all_children();
 }
 
 //static
@@ -60,7 +88,7 @@ FrameworkWindow* FrameworkWindow::create()
 //---------------------------------
 // FrameworkWindow::OpenFileView
 //
-// Nothing yet
+// From gtkmm example, open a file
 //
 void FrameworkWindow::OpenFileView(Glib::RefPtr<Gio::File> const& file)
 {
@@ -98,32 +126,83 @@ void FrameworkWindow::OpenFileView(Glib::RefPtr<Gio::File> const& file)
 }
 
 //---------------------------------
-// FrameworkWindow::InitializeGTK
+// FrameworkWindow::Redraw
 //
-// Connect input manager signals
+// Trigger redrawing the window
 //
-void FrameworkWindow::InitializeGTK()
+void FrameworkWindow::Redraw()
 {
-	set_border_width(10);
+	m_GLArea->queue_draw();
+}
 
-	// listen for keyboard input
-	// on press
-	auto keyPressedCallback = [](GdkEventKey* evnt) -> bool
+//---------------------------------
+// FrameworkWindow::OnRealize
+//
+// init open gl stuff
+//
+void FrameworkWindow::OnRealize()
+{
+	m_GLArea->make_current();
+	try
 	{
-		InputManager::GetInstance()->OnKeyPressed(evnt->keyval);
-		return false;
-	};
-	signal_key_press_event().connect(keyPressedCallback, false);
-
-	// on release
-	auto keyReleasedCallback = [](GdkEventKey* evnt) -> bool
+		m_GLArea->throw_if_error();
+	}
+	catch (const Gdk::GLError& gle)
 	{
-		InputManager::GetInstance()->OnKeyReleased(evnt->keyval);
-		return false;
-	};
-	signal_key_release_event().connect(keyReleasedCallback, false);
+		LOG("An error occured making the context current during realize:", LogLevel::Warning);
+		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
+	}
+}
 
-	//show all the widgets
-	show_all_children();
+//---------------------------------
+// FrameworkWindow::OnUnrealize
+//
+// Uninit open gl stuff
+//
+void FrameworkWindow::OnUnrealize()
+{
+	m_GLArea->make_current();
+	try
+	{
+		m_GLArea->throw_if_error();
+	}
+	catch (const Gdk::GLError& gle)
+	{
+		LOG("An error occured making the context current during unrealize", LogLevel::Warning);
+		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
+	}
+}
+
+//---------------------------------
+// FrameworkWindow::OnRender
+//
+// Render the content of the GL area
+//
+bool FrameworkWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
+{
+	UNUSED(context);
+
+	m_Timer += TIME->DeltaTime();
+	while (m_Timer > 1.f)
+	{
+		m_Timer -= 1.f;
+	}
+
+	try
+	{
+		m_GLArea->throw_if_error();
+		glClearColor(0.05f, 0.075f, 0.2f * m_Timer, 1.f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glFlush();
+
+		return true;
+	}
+	catch (const Gdk::GLError& gle)
+	{
+		LOG("An error occurred in the render callback of the GLArea", LogLevel::Warning);
+		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
+		return false;
+	}
 }
 

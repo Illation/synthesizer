@@ -316,7 +316,21 @@ bool Framework::OnTick()
 	TIME->Update();
 	PERFORMANCE->StartFrameTimer();
 
+	// Tick
 	m_Synthesizer->Update();
+
+	// Render
+	FrameworkWindow* appwindow = nullptr;
+	std::vector<Gtk::Window *> windows = get_windows();
+	if (windows.size() > 0)
+	{
+		appwindow = dynamic_cast<FrameworkWindow*>(windows[0]);
+
+		if (appwindow)
+		{
+			appwindow->Redraw();
+		}
+	}
 
 	// Update keystates
 	InputManager::GetInstance()->Update();

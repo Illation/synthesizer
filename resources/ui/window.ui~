@@ -14,15 +14,17 @@
       <object class="GtkBox" id="content_box">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkHeaderBar" id="header">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="spacing">0</property>
             <child type="title">
               <object class="GtkStackSwitcher" id="tabs">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="icon_size">0</property>
                 <property name="stack">stack</property>
               </object>
             </child>
@@ -38,11 +40,19 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <placeholder/>
+              <object class="GtkGLArea" id="glArea">
+                <property name="visible">True</property>
+                <property name="app_paintable">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="name">OscillatorVisualizer</property>
+                <property name="title" translatable="yes">Oscillator 1</property>
+              </packing>
             </child>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">1</property>
           </packing>
