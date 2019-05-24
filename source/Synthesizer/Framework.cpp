@@ -10,12 +10,13 @@
 #include <UI/FrameworkWindow.h>
 #include <UI/SettingsDialog.h>
 
-#include <Helper/Commands.h>
-#include <Helper/InputManager.h>
+#include <EtCore/Helper/Commands.h>
+#include <EtCore/Helper/InputManager.h>
 
 #include "Config.h"
 #include "MidiManager.h"
 #include "LowEndAudioManager.h"
+
 #include <glib/gerror.h>
 #include <glibmm/ustring.h>
 #include <gio/gresource.h>
@@ -104,7 +105,7 @@ Glib::RefPtr<Framework> Framework::create()
 //
 FrameworkWindow* Framework::CreateFrameworkWindow()
 {
-	FrameworkWindow* appwindow = FrameworkWindow::create();
+	FrameworkWindow* appwindow = FrameworkWindow::create(this);
 
 	// Make sure that the application runs for as long this window is still open.
 	add_window(*appwindow);
@@ -306,36 +307,28 @@ void Framework::TerminateAudio()
 //
 // What do we want to do every cycle?
 //
+void Framework::Update()
+{
+	// Tick
+	m_Synthesizer->Update();
+
+	// Update keystates
+	InputManager::GetInstance()->Update();
+
+	// call on tick here if this is not real time
+}
+
+//---------------------------------
+// Framework::OnTick
+//
+// What do we want to do every cycle?
+//
 bool Framework::OnTick()
 {
 	if (!(InputManager::GetInstance()->IsRunning()))
 	{
 		return false;
 	}
-
-	TIME->Update();
-	PERFORMANCE->StartFrameTimer();
-
-	// Tick
-	m_Synthesizer->Update();
-
-	// Render
-	FrameworkWindow* appwindow = nullptr;
-	std::vector<Gtk::Window *> windows = get_windows();
-	if (windows.size() > 0)
-	{
-		appwindow = dynamic_cast<FrameworkWindow*>(windows[0]);
-
-		if (appwindow)
-		{
-			appwindow->Redraw();
-		}
-	}
-
-	// Update keystates
-	InputManager::GetInstance()->Update();
-
-	PERFORMANCE->Update();
 
 	return true; // we want to keep the callback alive
 }

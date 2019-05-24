@@ -12,13 +12,6 @@ uint8 Logger::m_BreakBitField = LogLevel::Error;
 bool Logger::m_TimestampDate = true;
 bool Logger::m_IsInitialized = false;
 
-Logger::Logger()
-{
-}
-Logger::~Logger()
-{
-}
-
 void Logger::Initialize()
 {
 	m_ConsoleLogger = new ConsoleLogger();
@@ -50,13 +43,13 @@ void Logger::StopFileLogging()
 	SafeDelete(m_FileLogger);
 }
 
-ivec2 Logger::GetCursorPosition()
+Logger::T_CursorPos Logger::GetCursorPosition()
 {
 	if (m_ConsoleLogger)return m_ConsoleLogger->GetCursorPosition();
-	else return ivec2(-1);
+	else return std::make_pair(-1, -1);
 }
 
-void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, ivec2 cursorPos)
+void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, T_CursorPos cursorPos)
 {
 #ifndef _DEBUG
 	if (level&Verbose)return;
@@ -75,8 +68,13 @@ void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, ivec2 c
 	{
 		SYSTEMTIME st;
 		GetSystemTime(&st);
+
 		timestampStream << "[";
-		if(m_TimestampDate)timestampStream << st.wYear << "/" << st.wMonth << "/" << st.wDay << "-";
+		if (m_TimestampDate)
+		{
+			timestampStream << st.wYear << "/" << st.wMonth << "/" << st.wDay << "-";
+		}
+
 		timestampStream << st.wHour << "." << st.wMinute << "." << st.wSecond << ":" << st.wMilliseconds << "]";
 	}
 
@@ -102,6 +100,7 @@ void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, ivec2 c
 	//Use specific loggers to log
 	if (m_ConsoleLogger)
 	{
+		// on non shipping builds we set the color in the console
 #ifndef SHIPPING
 		switch (level)
 		{
@@ -110,31 +109,54 @@ void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, ivec2 c
 		case LogLevel::Error: m_ConsoleLogger->SetColor(ConsoleLogger::Color::RED); break;
 		case LogLevel::FixMe: m_ConsoleLogger->SetColor(ConsoleLogger::Color::MAGENTA); break;
 		}
-#endif
-		if (!etm::nearEqualsV(cursorPos, ivec2(-1))) m_ConsoleLogger->SetCursorPosition(cursorPos);
-		if(timestamp)m_ConsoleLogger->Log(timestampStream.str());
-		else m_ConsoleLogger->Log(stream.str());
+#endif // SHIPPING
+
+		if (!(cursorPos.first == -1 && cursorPos.second == -1))
+		{
+			m_ConsoleLogger->SetCursorPosition(cursorPos);
+		}
+
+		if (timestamp)
+		{
+			m_ConsoleLogger->Log(timestampStream.str());
+		}
+		else
+		{
+			m_ConsoleLogger->Log(stream.str());
+		}
 	}
+
 	if (m_FileLogger)
 	{
-		if (!etm::nearEqualsV(cursorPos, ivec2(-1))) m_FileLogger->SetCursorPosition(cursorPos);
+		if (!(cursorPos.first == -1 && cursorPos.second == -1))
+		{
+			m_FileLogger->SetCursorPosition(cursorPos);
+		}
+
 		m_FileLogger->Log(timestampStream.str());
 	}
+
 #ifndef SHIPPING
-	if (m_DebugLogger)
+	if (m_DebugLogger) // on non shipping builds we also log to the vis
 	{
-		if (!etm::nearEqualsV(cursorPos, ivec2(-1))) m_DebugLogger->SetCursorPosition(cursorPos);
+		if (!(cursorPos.first == -1 && cursorPos.second == -1))
+		{
+			m_DebugLogger->SetCursorPosition(cursorPos);
+		}
+
 		m_DebugLogger->Log(timestampStream.str());
 	}
-#ifdef PLATFORM_Win
+
+#ifdef PLATFORM_Win // on windows we show a message box for errors
 	//if error, break
 	if (level == LogLevel::Error)
 	{
 		MessageBox(0, msg.c_str(), "ERROR", 0);
 		abort();
 	}
-#endif
-#endif
+#endif // PLATFORM_Win
+
+#endif // ndef SHIPPING 
 
 	CheckBreak(level);
 }
@@ -142,14 +164,26 @@ void Logger::Log(const std::string& msg, LogLevel level, bool timestamp, ivec2 c
 void Logger::CheckBreak(LogLevel level)
 {
 #if _DEBUG
+
 #ifdef PLATFORM_x32
-	if ((m_BreakBitField&level) == level) __asm { int 3 };
-#else
-	if ((m_BreakBitField&level) == level) __debugbreak();
-#endif
-#else
-	if ((m_BreakBitField&level) == level) exit(-1);
-#endif
+	if ((m_BreakBitField&level) == level)
+	{
+		__asm { int 3 };
+	}
+#else // PLATFORM_x64
+	if ((m_BreakBitField&level) == level)
+	{
+		__debugbreak();
+	}
+#endif // PLATFORM_x32
+
+#else // not debug
+	if ((m_BreakBitField&level) == level) 
+	{
+		exit(-1);
+	}
+
+#endif // _DEBUG
 }
 
 
@@ -214,25 +248,27 @@ void Logger::ConsoleLogger::SetColor(ConsoleLogger::Color color)
 #endif
 }
 
-void Logger::ConsoleLogger::SetCursorPosition(ivec2 cursorPos)
+void Logger::ConsoleLogger::SetCursorPosition(Logger::T_CursorPos cursorPos)
 {
 #ifdef PLATFORM_Win
 	COORD pos;
-	pos.X = (int16)cursorPos.x;
-	pos.Y = (int16)cursorPos.y;
+	pos.X = (int16)cursorPos.first;
+	pos.Y = (int16)cursorPos.second;
+
 	SetConsoleCursorPosition(m_ConsoleHandle, pos);
 #endif
 }
 
-ivec2 Logger::ConsoleLogger::GetCursorPosition()
+Logger::T_CursorPos Logger::ConsoleLogger::GetCursorPosition()
 {
 #ifdef PLATFORM_Win
 	CONSOLE_SCREEN_BUFFER_INFO bufferInfo;
 	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &bufferInfo))
 	{
-		ivec2 ret;
-		ret.x = (int32)bufferInfo.dwCursorPosition.X;
-		ret.y = (int32)bufferInfo.dwCursorPosition.Y;
+		T_CursorPos ret;
+		ret.first = (int32)bufferInfo.dwCursorPosition.X;
+		ret.second = (int32)bufferInfo.dwCursorPosition.Y;
+
 		return ret;
 	}
 	else
@@ -240,7 +276,7 @@ ivec2 Logger::ConsoleLogger::GetCursorPosition()
 		DisplayError(TEXT("GetConsoleScreenBufferInfo"));
 	}
 #endif
-	return ivec2(-1);
+	return std::make_pair(-1, -1);
 }
 
 void Logger::DebugLogger::Log(const std::string& message)

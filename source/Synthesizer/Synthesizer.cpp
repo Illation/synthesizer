@@ -3,8 +3,9 @@
 
 #include "MidiManager.h"
 
-#include <Helper/Time.h>
-#include <Helper/InputManager.h>
+#include <EtCore/Helper/Time.h>
+#include <EtCore/Helper/InputManager.h>
+
 #include <gdk/gdkkeysyms-compat.h>
 
 //============

@@ -57,6 +57,8 @@ private:
 	void TerminateAudio();
 
 	// Runtime
+public:
+	void Update();
 private:
 	bool OnTick();
 	void OnActionPreferences();

@@ -12,6 +12,7 @@ public:
 
 private:
 	friend class Framework; //should init and destroy singleton
+	friend class FrameworkWindow;
 
 	void Update();
 	void StartFrameTimer();

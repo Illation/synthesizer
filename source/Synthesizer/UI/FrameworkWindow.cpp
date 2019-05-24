@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "FrameworkWindow.h"
 
-#include <Helper/InputManager.h>
+#include <EtCore/Helper/InputManager.h>
+#include <Framework.h>
 
 #include <gtkmm/object.h>
 #include <gtkmm/scrolledwindow.h>
@@ -69,7 +70,7 @@ FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Buil
 //
 // Create a Framework window from the generated source in window.ui
 //
-FrameworkWindow* FrameworkWindow::create()
+FrameworkWindow* FrameworkWindow::create(Framework *const framework)
 {
 	// Load the Builder file and instantiate its widgets.
 	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/window.ui");
@@ -81,6 +82,8 @@ FrameworkWindow* FrameworkWindow::create()
 	{
 		throw std::runtime_error("No 'app_window' object in window.ui");
 	}
+
+	window->SetFramework(framework);
 
 	return window;
 }
@@ -176,12 +179,33 @@ void FrameworkWindow::OnUnrealize()
 //---------------------------------
 // FrameworkWindow::OnRender
 //
-// Render the content of the GL area
+// This function updates everything in a gameloops style and then calls Render, making sure to refresh itself at screen refresh rate
 //
 bool FrameworkWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
 {
 	UNUSED(context);
 
+	TIME->Update();
+	PERFORMANCE->StartFrameTimer();
+
+	m_Framework->Update();
+
+	bool result = Render();
+
+	PERFORMANCE->Update();
+
+	m_GLArea->queue_draw(); // request drawing again
+
+	return result;
+}
+
+//---------------------------------
+// FrameworkWindow::Render
+//
+// Draws the GL Area
+//
+bool FrameworkWindow::Render()
+{
 	m_Timer += TIME->DeltaTime();
 	while (m_Timer > 1.f)
 	{
@@ -195,14 +219,15 @@ bool FrameworkWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glFlush();
-
-		return true;
 	}
 	catch (const Gdk::GLError& gle)
 	{
 		LOG("An error occurred in the render callback of the GLArea", LogLevel::Warning);
 		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
+
 		return false;
 	}
+
+	return true;
 }
 

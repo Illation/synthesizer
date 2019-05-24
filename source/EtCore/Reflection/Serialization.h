@@ -1,14 +1,14 @@
 #pragma once
 
-#include <FileSystem/JSONdom.h>
+#include <EtCore/FileSystem/JSONdom.h>
 
 #include <rttr/type>
 
-#include <FileSystem/Entry.h>
-#include <FileSystem/FileUtil.h>
-#include <FileSystem/JSONdom.h>
-#include <FileSystem/JSONparser.h>
-#include <FileSystem/JsonWriter.h>
+#include <EtCore/FileSystem/Entry.h>
+#include <EtCore/FileSystem/FileUtil.h>
+#include <EtCore/FileSystem/JSONdom.h>
+#include <EtCore/FileSystem/JSONparser.h>
+#include <EtCore/FileSystem/JsonWriter.h>
 
 // This code is heavily based on https://github.com/rttrorg/rttr/tree/master/src/examples/json_serialization
 

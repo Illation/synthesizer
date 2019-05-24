@@ -88,6 +88,60 @@ function windowsPlatformExtraBuildSteps()
 	configuration {}
 end
 
+function dependancyLinks()
+	--Linked libraries with varying names per configuration
+	configuration "Debug"
+		-- RTTR
+		links { "rttr_core_d" }
+		-- GTKmm
+		links { "bz2d", "cairod", "cairo-gobjectd", "freetyped", "libpng16d", "pcre16d", "pcre32d", "pcrecppd", "pcred", "pcreposixd", "pixman-1d", "zlibd" }
+	configuration "Development"
+		-- RTTR
+		links { "rttr_core" }
+		-- GTKmm
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration "Shipping"
+		-- RTTR
+		links { "rttr_core" }
+		-- GTKmm
+		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
+	configuration {}
+
+    links{ 
+		--GTK
+		"atk-1.0" 
+		, "atkmm" 
+		, "cairomm-1.0" 
+		, "epoxy" 
+		, "expat" 
+		, "fontconfig" 
+		, "gailutil-3.0" 
+		, "gdk_pixbuf-2.0" 
+		, "gdk-3.0" 
+		, "gdkmm" 
+		, "gio-2.0" 
+		, "giomm" 
+		, "glib-2.0" 
+		, "glibmm" 
+		, "gmodule-2.0" 
+		, "gobject-2.0" 
+		, "gthread-2.0" 
+		, "gtk-3.0" 
+		, "gtkmm" 
+		, "harfbuzz" 
+		, "libcharset" 
+		, "libffi" 
+		, "libiconv" 
+		, "libintl" 
+		, "pango-1.0" 
+		, "pangocairo-1.0" 
+		, "pangoft2-1.0" 
+		, "pangomm" 
+		, "pangowin32-1.0" 
+		, "sigc-2.0" 
+	}
+end
+
 configuration "Debug"
 	defines { "_DEBUG", "__RTMIDI_DEBUG__ " }
 	flags { "Symbols", "ExtraWarnings" }
@@ -165,61 +219,13 @@ project "Synthesizer"
 	platformLibraries()
 	windowsPlatformExtraBuildSteps()
 
-	--Linked libraries with varying names per configuration
-	configuration "Debug"
-		-- RTTR
-		links { "rttr_core_d" }
-		-- GTKmm
-		links { "bz2d", "cairod", "cairo-gobjectd", "freetyped", "libpng16d", "pcre16d", "pcre32d", "pcrecppd", "pcred", "pcreposixd", "pixman-1d", "zlibd" }
-	configuration "Development"
-		-- RTTR
-		links { "rttr_core" }
-		-- GTKmm
-		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
-	configuration "Shipping"
-		-- RTTR
-		links { "rttr_core" }
-		-- GTKmm
-		links { "bz2", "cairo", "cairo-gobject", "freetype", "libpng16", "pcre16", "pcre32", "pcrecpp", "pcre", "pcreposix", "pixman-1", "zlib" }
-	configuration {}
+	dependancyLinks()
 
-	--Linked libraries with same name for every configuration
-	--
-	-- GTKmm
+	--Internal static links
     links{ 
-		--Internal static links
 		"Vendor"
-		--GTK
-		, "atk-1.0" 
-		, "atkmm" 
-		, "cairomm-1.0" 
-		, "epoxy" 
-		, "expat" 
-		, "fontconfig" 
-		, "gailutil-3.0" 
-		, "gdk_pixbuf-2.0" 
-		, "gdk-3.0" 
-		, "gdkmm" 
-		, "gio-2.0" 
-		, "giomm" 
-		, "glib-2.0" 
-		, "glibmm" 
-		, "gmodule-2.0" 
-		, "gobject-2.0" 
-		, "gthread-2.0" 
-		, "gtk-3.0" 
-		, "gtkmm" 
-		, "harfbuzz" 
-		, "libcharset" 
-		, "libffi" 
-		, "libiconv" 
-		, "libintl" 
-		, "pango-1.0" 
-		, "pangocairo-1.0" 
-		, "pangoft2-1.0" 
-		, "pangomm" 
-		, "pangowin32-1.0" 
-		, "sigc-2.0" 
+		, "EtCore" 
+		, "EtMath" 
 	}
 
 	--additional includedirs
@@ -238,10 +244,59 @@ project "Synthesizer"
 
 	nopch { 	
 		path.join(SOURCE_DIR, "Synthesizer/UI/_generated/resources.c"),  
-	}	--vendor and generated code shouldn't use precompiled headers
+	}	--generated code shouldn't use precompiled headers
 
 	pchheader "stdafx.h"
 	pchsource "../source/Synthesizer/stdafx.cpp"
+
+
+-- Math library from E.T.Engine
+project "EtMath"
+    kind "StaticLib"
+
+	location "../source/EtMath"
+	
+	libOutputDirectories("EtMath")
+
+	--additional includedirs
+	local ProjBase = path.join(SOURCE_DIR, "EtMath") 
+	includedirs { ProjBase }
+
+    files { 
+		path.join(SOURCE_DIR, "EtMath/**.cpp"), 
+		path.join(SOURCE_DIR, "EtMath/**.inl"), 
+		path.join(SOURCE_DIR, "EtMath/**.h"), 
+	}
+
+	--additional includedirs
+	includedirs { SOURCE_DIR }
+
+
+-- Base framework from E.T.Engine
+project "EtCore"
+    kind "StaticLib"
+
+	location "../source/EtCore"
+	
+	libOutputDirectories("EtCore")
+
+	--additional includedirs
+	local ProjBase = path.join(SOURCE_DIR, "EtCore") 
+	includedirs { ProjBase }
+
+    files { 
+		path.join(SOURCE_DIR, "EtCore/**.cpp"), 
+		path.join(SOURCE_DIR, "EtCore/**.hpp"), 
+		path.join(SOURCE_DIR, "EtCore/**.inl"), 
+		path.join(SOURCE_DIR, "EtCore/**.h"), 
+	}
+
+	--additional includedirs
+	includedirs { SOURCE_DIR }
+
+	pchheader "stdafx.h"
+	pchsource "../source/EtCore/stdafx.cpp"
+
 
 -- all non prebuilt vendor libraries go here
 project "Vendor"

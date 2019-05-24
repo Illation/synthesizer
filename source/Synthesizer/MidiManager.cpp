@@ -73,7 +73,8 @@ void MidiManager::TerminateMidi()
 	if (m_ActivePort != s_DeselectedPort)
 	{
 		m_MidiInput->closePort();
-		SafeDelete(m_MidiInput);
+		delete m_MidiInput;
+		m_MidiInput = nullptr;
 
 		m_ActivePort = s_DeselectedPort;
 	}

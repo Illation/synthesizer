@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "Config.h"
 
-#include <Reflection/Serialization.h>
+#include <EtCore/Reflection/Serialization.h>
+
 #include <rttr/registration>
 
 // reflection

@@ -14,10 +14,12 @@ enum LogLevel
 class Logger
 {
 public:
-	static void Log(const std::string& msg, LogLevel level = LogLevel::Info,
-		bool timestamp = false, ivec2 cursorPos = ivec2(-1));
+	typedef std::pair<int32, int32> T_CursorPos;
 
-	static ivec2 GetCursorPosition();
+	static void Log(const std::string& msg, LogLevel level = LogLevel::Info,
+		bool timestamp = false, T_CursorPos cursorPos = std::make_pair(-1, -1));
+
+	static T_CursorPos GetCursorPosition();
 
 	static void StartFileLogging(const std::string& filename);
 	static void StopFileLogging();
@@ -47,7 +49,7 @@ private:
 			(*m_os) << message;
 			m_os->flush();
 		}
-		virtual void SetCursorPosition(ivec2 cursorPos) { UNUSED(cursorPos); }
+		virtual void SetCursorPosition(T_CursorPos cursorPos) { UNUSED(cursorPos); }
 	};
 
 	class FileLogger : public AbstractLogger
@@ -83,8 +85,8 @@ private:
 			MAGENTA
 		};
 		void SetColor(ConsoleLogger::Color color);
-		void SetCursorPosition(ivec2 cursorPos) override;
-		ivec2 GetCursorPosition();
+		void SetCursorPosition(T_CursorPos cursorPos) override;
+		T_CursorPos GetCursorPosition();
 	private:
 #ifdef PLATFORM_Win
 		HANDLE m_ConsoleHandle;
@@ -109,8 +111,8 @@ private:
 
 private:
 	//Disable default constructor and destructor
-	Logger();
-	~Logger();
+	Logger() = default;
+	~Logger() = default;
 	Logger(const Logger &obj);
 	Logger& operator=(const Logger& obj);
 };

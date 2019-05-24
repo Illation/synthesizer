@@ -1,5 +1,5 @@
 #pragma once
-#include <Helper/Singleton.h>
+#include <EtCore/Helper/Singleton.h>
 
 #include <rttr/type>
 

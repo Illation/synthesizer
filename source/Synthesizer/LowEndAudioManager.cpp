@@ -98,7 +98,7 @@ void LowEndAudioManager::TerminateAudio()
 		m_Audio->closeStream();
 	}
 
-	SafeDelete(m_Audio);
+	delete m_Audio;
 }
 
 //---------------------------------

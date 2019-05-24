@@ -21,7 +21,8 @@ public:
 	FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builder> const& refBuilder);
 	virtual ~FrameworkWindow() = default;
 
-	static FrameworkWindow* create();
+	static FrameworkWindow* create(Framework *const framework);
+	void SetFramework(Framework *const framework) { m_Framework = framework; }
 
 	void OpenFileView(Glib::RefPtr<Gio::File> const& file);
 
@@ -34,6 +35,9 @@ protected:
 	bool OnRender(const Glib::RefPtr<Gdk::GLContext>& context);
 
 private:
+	bool Render();
+
+private:
 
 	// Data
 	/////////
@@ -43,6 +47,7 @@ private:
 	Gtk::Stack* m_Stack;
 
 	Gtk::GLArea* m_GLArea;
+	Framework* m_Framework;
 
 	float m_Timer = 0.f;
 };
