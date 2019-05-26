@@ -102,10 +102,10 @@ float Oscillator::GetSample(double const dt)
 		switch (m_Parameters.patternType)
 		{
 		case E_PatternType::Saw:
-			signal -= GetPolyBlep(deltaPhase, m_Phase);
+			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
 			break;
 		case E_PatternType::Square:
-		case E_PatternType::Triangle:
+		//case E_PatternType::Triangle:
 			signal += GetPolyBlep(deltaPhase, m_Phase);
 			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
 			break;

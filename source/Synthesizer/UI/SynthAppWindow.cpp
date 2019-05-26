@@ -1,14 +1,16 @@
 #include "stdafx.h"
 #include "SynthAppWindow.h"
 
-#include <EtCore/Helper/InputManager.h>
 #include <SynthApp.h>
+#include <Synth/Synthesizer.h>
+
+#include "OscillatorRenderer.h"
+
+#include <EtCore/Helper/InputManager.h>
 
 #include <gtkmm/object.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>
-
-#include <epoxy/gl.h>
 
 //====================
 // Synth Application Window
@@ -25,8 +27,6 @@ SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builde
 	, m_Settings()
 	, m_Stack(nullptr)
 {
-	RegisterAsTriggerer();
-
 	m_RefBuilder->get_widget("stack", m_Stack);
 	if (!m_Stack)
 	{
@@ -36,14 +36,13 @@ SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builde
 	m_Settings = Gio::Settings::create("com.leah-lindner.synthesizer");
 	m_Settings->bind("transition", m_Stack->property_transition_type());
 
-	m_RefBuilder->get_widget("glArea", m_GLArea);
-	if (!m_GLArea)
+	Gtk::GLArea* glArea;
+	m_RefBuilder->get_widget("glArea", glArea);
+	if (!glArea)
 	{
 		LOG("SynthAppWindow::SynthAppWindow > No 'glArea' object in window.ui!", LogLevel::Error);
 	}
-	m_GLArea->signal_realize().connect(sigc::mem_fun(*this, &SynthAppWindow::OnRealize));
-	m_GLArea->signal_unrealize().connect(sigc::mem_fun(*this, &SynthAppWindow::OnUnrealize), false);
-	m_GLArea->signal_render().connect(sigc::mem_fun(*this, &SynthAppWindow::OnRender), false);
+	m_Viewport = std::make_unique<Viewport>(glArea);
 
 	// listen for keyboard input
 	// on press
@@ -91,100 +90,22 @@ SynthAppWindow* SynthAppWindow::create(SynthApp *const synthApp)
 }
 
 //---------------------------------
-// SynthAppWindow::Redraw
+// SynthAppWindow::SetSynthApp
 //
-// Trigger redrawing the window
+// Set the synth app so we can display components of the synthesizer
 //
-void SynthAppWindow::Redraw()
+void SynthAppWindow::SetSynthApp(SynthApp *const synthApp)
 {
-	m_GLArea->queue_draw();
-}
+	m_SynthApp = synthApp;
 
-//---------------------------------
-// SynthAppWindow::OnRealize
-//
-// init open gl stuff
-//
-void SynthAppWindow::OnRealize()
-{
-	m_GLArea->make_current();
-	try
+	SynthParameters const& params = m_SynthApp->GetSynthesizer()->GetParameters();
+
+	if (params.oscillators.size() > 0)
 	{
-		m_GLArea->throw_if_error();
+		m_Viewport->SetRenderer(new OscillatorRenderer(params.oscillators[0]));
 	}
-	catch (const Gdk::GLError& gle)
+	else
 	{
-		LOG("An error occured making the context current during realize:", LogLevel::Warning);
-		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
+		LOG("SynthAppWindow::SetSynthApp > couldn't create a renderer for an oscillator because there are none!", LogLevel::Warning);
 	}
 }
-
-//---------------------------------
-// SynthAppWindow::OnUnrealize
-//
-// Uninit open gl stuff
-//
-void SynthAppWindow::OnUnrealize()
-{
-	m_GLArea->make_current();
-	try
-	{
-		m_GLArea->throw_if_error();
-	}
-	catch (const Gdk::GLError& gle)
-	{
-		LOG("An error occured making the context current during unrealize", LogLevel::Warning);
-		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
-	}
-}
-
-//---------------------------------
-// SynthAppWindow::OnRender
-//
-// This function updates everything in a gameloops style and then calls Render, making sure to refresh itself at screen refresh rate
-//
-bool SynthAppWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
-{
-	UNUSED(context);
-
-	TriggerTick(); // if this is the first real time thing we will start the update process here
-
-	bool result = Render();
-
-	m_GLArea->queue_draw(); // request drawing again
-
-	return result;
-}
-
-//---------------------------------
-// SynthAppWindow::Render
-//
-// Draws the GL Area
-//
-bool SynthAppWindow::Render()
-{
-	m_Timer += TIME->DeltaTime();
-	while (m_Timer > 1.f)
-	{
-		m_Timer -= 1.f;
-	}
-
-	try
-	{
-		m_GLArea->throw_if_error();
-		glClearColor(0.05f, 0.075f, 0.2f * m_Timer, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glFlush();
-	}
-	catch (const Gdk::GLError& gle)
-	{
-		LOG("An error occurred in the render callback of the GLArea", LogLevel::Warning);
-		LOG(std::to_string(gle.domain()) + std::string("-") + std::to_string(gle.code()) + std::string("-") + gle.what().raw(), LogLevel::Warning);
-
-		return false;
-	}
-
-	return true;
-}
-

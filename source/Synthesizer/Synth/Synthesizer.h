@@ -121,6 +121,8 @@ public:
 	
 	std::vector<float> GetSample();
 
+	SynthParameters const& GetParameters() const { return m_SynthParameters; }
+
 protected:
 	void OnMidiEvent(E_MidiStatus const status, uint8 const channel, std::vector<uint8> const& data) override;
 

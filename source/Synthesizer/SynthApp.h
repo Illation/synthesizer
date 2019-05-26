@@ -59,12 +59,13 @@ private:
 	void TerminateAudio();
 
 	// Runtime
-public:
-	void Update();
 private:
 	bool OnTick();
 	void OnActionPreferences();
 	void OnActionQuit();
+
+public:
+	Synthesizer const* GetSynthesizer() const { return m_Synthesizer.get(); }
 
 private:
 	// Data
