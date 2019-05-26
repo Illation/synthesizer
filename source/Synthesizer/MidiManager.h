@@ -22,7 +22,7 @@ public:
 	static constexpr int32 s_DeselectedPort = -1;
 
 	friend class Singleton<MidiManager>;
-	friend class Framework;
+	friend class SynthApp;
 
 private:
 	// Init / deInit

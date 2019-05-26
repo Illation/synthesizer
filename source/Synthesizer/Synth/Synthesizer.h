@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 
+#include <EtCore/UpdateCycle/Tickable.h>
+
 #include "Config.h"
 
 #include "MidiListener.h"
@@ -109,11 +111,13 @@ private:
 //
 // Generates sounds
 //
-class Synthesizer final : public I_MidiListener
+class Synthesizer final : public I_MidiListener, public I_Tickable
 {
 public:
+	Synthesizer() : I_Tickable(0) {}
+
 	void Initialize();
-	void Update();
+	void OnTick() override;
 	
 	std::vector<float> GetSample();
 

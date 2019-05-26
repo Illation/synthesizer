@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Synthesizer.h"
+#include <Synth/Synthesizer.h>
 
 #include <Vendor/RtAudio/RtAudio.h>
 
@@ -15,7 +15,7 @@ public:
 	// typedefs and declarations
 	//------------------
 	friend class Singleton<LowEndAudioManager>;
-	friend class Framework;
+	friend class SynthApp;
 
 	typedef std::pair<std::string, std::string> T_ApiIdNamePair;
 	typedef std::pair<uint32, std::string> T_DeviceIdNamePair;

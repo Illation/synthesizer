@@ -21,24 +21,23 @@ enum E_KeyState
 //
 class InputManager : public Singleton<InputManager>
 {
-public:
-	E_KeyState GetKeyState(uint32 const key);
-
-	bool IsRunning() const { return m_IsRunning; }
-
 private:
 	friend class Singleton<InputManager>;
-	friend class Framework;
-	friend class FrameworkWindow;
+	friend class TickManager;
 
 	// Defualt constructor and destructor
 	InputManager() : m_KeyStates() {}
 	virtual ~InputManager() = default;
 
+	void Update();
+
+public:
+	E_KeyState GetKeyState(uint32 const key);
+
+	bool IsRunning() const { return m_IsRunning; }
+
 	void OnKeyPressed(uint32 const key);
 	void OnKeyReleased(uint32 const key);
-
-	void Update();
 
 	void Quit() { m_IsRunning = false; }
 

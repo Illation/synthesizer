@@ -141,11 +141,11 @@ void Synthesizer::Initialize()
 }
 
 //---------------------------------
-// Synthesizer::Update
+// Synthesizer::OnTick
 //
 // Update which voices are active, adjust parameters
 //
-void Synthesizer::Update()
+void Synthesizer::OnTick()
 {
 	// Map all the keys on our keyboard we want our synthesizer to play - later this could work through MIDI
 	std::vector<uint32> keys;

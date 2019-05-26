@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EtCore/UpdateCycle/RealTimeTickTriggerer.h>
+
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/builder.h>
 #include <glibmm/refptr.h>
@@ -9,22 +11,21 @@
 
 //forward declarations
 class Gio::File;
+class SynthApp;
 
 //---------------------------------
-// FrameworkWindow
+// SynthAppWindow
 //
 // Main window for this project
 //
-class FrameworkWindow final : public Gtk::ApplicationWindow
+class SynthAppWindow final : public Gtk::ApplicationWindow, public I_RealTimeTickTriggerer
 {
 public:
-	FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builder> const& refBuilder);
-	virtual ~FrameworkWindow() = default;
+	SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builder> const& refBuilder);
+	virtual ~SynthAppWindow() = default;
 
-	static FrameworkWindow* create(Framework *const framework);
-	void SetFramework(Framework *const framework) { m_Framework = framework; }
-
-	void OpenFileView(Glib::RefPtr<Gio::File> const& file);
+	static SynthAppWindow* create(SynthApp *const synthApp);
+	void SetSynthApp(SynthApp *const synthApp) { m_SynthApp = synthApp; }
 
 	void Redraw();
 
@@ -47,7 +48,7 @@ private:
 	Gtk::Stack* m_Stack;
 
 	Gtk::GLArea* m_GLArea;
-	Framework* m_Framework;
+	SynthApp* m_SynthApp;
 
 	float m_Timer = 0.f;
 };

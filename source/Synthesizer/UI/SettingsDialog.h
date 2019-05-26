@@ -9,12 +9,12 @@
 #include <gtkmm/comboboxtext.h>
 
 // forward declarations
-class Framework;
+class SynthApp;
 
 //---------------------------------
 // SettingsDialog
 //
-// Dialog that allows us to change the frameworks settings
+// Dialog that allows us to change the applications settings
 //
 class SettingsDialog : public Gtk::Dialog
 {

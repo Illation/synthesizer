@@ -11,11 +11,13 @@ public:
 	float GetFrameMS() { return m_FrameMS; }
 
 private:
-	friend class Framework; //should init and destroy singleton
-	friend class FrameworkWindow;
+	friend class TickManager;
 
+	// These two functions should only be called once per cycle
 	void Update();
 	void StartFrameTimer();
+
+private:
 
 	float m_RegFPSTimer = 10;
 	int32 m_RegularFPS = 0;

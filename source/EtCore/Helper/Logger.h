@@ -27,11 +27,10 @@ public:
 	static void UseTimestampDate(bool val) { m_TimestampDate = val; }
 
 	static bool IsInitialized() { return m_IsInitialized; }
-private:
-	friend class Framework;
 
 	static void Initialize();
 	static void Release();
+private:
 
 	static void CheckBreak(LogLevel level);
 

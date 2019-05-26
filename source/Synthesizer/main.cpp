@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Framework.h"
+#include "SynthApp.h"
 
 #include <glibmm/refptr.h>
 #include <glibmm/miscutils.h>
@@ -18,13 +18,13 @@ int main(int argc, char *argv[])
 	// schema. This is *not* necessary in a properly installed application.
 	Glib::setenv("GSETTINGS_SCHEMA_DIR", ".", false);
 
-	Glib::RefPtr<Framework> framework = Framework::create();
+	Glib::RefPtr<SynthApp> synthApp = SynthApp::create();
 
 	// Start the application, showing the initial window,
 	// and opening extra views for any files that it is asked to open,
 	// for instance as a command-line parameter.
 	// run() will return when the last window has been closed.
-	int32 result = framework->run(argc, argv);
+	int32 result = synthApp->run(argc, argv);
 
 	synthesizer_unregister_resource();
 

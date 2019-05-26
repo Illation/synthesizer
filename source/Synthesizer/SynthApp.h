@@ -1,15 +1,18 @@
 #pragma once
+
+#include <EtCore/UpdateCycle/DefaultTickTriggerer.h>
+
 #include <list>
 #include <memory>
 
-#include "Synthesizer.h"
+#include <Synth/Synthesizer.h>
 
 #include <gtkmm/application.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 
 // forward declarations
-class FrameworkWindow;
+class SynthAppWindow;
 
 //---------------------------------
 // CommandlineArguments
@@ -26,28 +29,27 @@ struct CommandlineArguments
 };
 
 //---------------------------------
-// Framework
+// SynthApp
 //
 // Main class for this project
 //
-class Framework final : public Gtk::Application 
+class SynthApp final : public Gtk::Application, public I_DefaultTickTriggerer
 {
 protected:
-	Framework();
-	virtual ~Framework();
+	SynthApp();
+	virtual ~SynthApp();
 
 public:
-	static Glib::RefPtr<Framework> create();
+	static Glib::RefPtr<SynthApp> create();
 
 private:
-	FrameworkWindow* CreateFrameworkWindow();
+	SynthAppWindow* CreateMainWindow();
 	void OnHideWindow(Gtk::Window* window);
 
 protected:
 	// Override default gtkmm application signal handlers:
 	void on_startup() override;
 	void on_activate() override;
-	void on_open(Gio::Application::type_vec_files const& files, Glib::ustring const& hint) override;
 
 private:
 	void InitializeUtilities();

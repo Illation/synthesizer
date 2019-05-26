@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "FrameworkWindow.h"
+#include "SynthAppWindow.h"
 
 #include <EtCore/Helper/InputManager.h>
-#include <Framework.h>
+#include <SynthApp.h>
 
 #include <gtkmm/object.h>
 #include <gtkmm/scrolledwindow.h>
@@ -11,20 +11,22 @@
 #include <epoxy/gl.h>
 
 //====================
-// Framework Window
+// Synth Application Window
 //====================
 
 //---------------------------------
-// FrameworkWindow::FrameworkWindow
+// SynthAppWindow::SynthAppWindow
 //
-// Framework window default constructor
+// Synth application window default constructor
 //
-FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builder> const& refBuilder)
+SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builder> const& refBuilder)
 	: Gtk::ApplicationWindow(cobject)
 	, m_RefBuilder(refBuilder)
 	, m_Settings()
 	, m_Stack(nullptr)
 {
+	RegisterAsTriggerer();
+
 	m_RefBuilder->get_widget("stack", m_Stack);
 	if (!m_Stack)
 	{
@@ -37,11 +39,11 @@ FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Buil
 	m_RefBuilder->get_widget("glArea", m_GLArea);
 	if (!m_GLArea)
 	{
-		LOG("SettingsDialog::FrameworkWindow > No 'glArea' object in window.ui!", LogLevel::Error);
+		LOG("SynthAppWindow::SynthAppWindow > No 'glArea' object in window.ui!", LogLevel::Error);
 	}
-	m_GLArea->signal_realize().connect(sigc::mem_fun(*this, &FrameworkWindow::OnRealize));
-	m_GLArea->signal_unrealize().connect(sigc::mem_fun(*this, &FrameworkWindow::OnUnrealize), false);
-	m_GLArea->signal_render().connect(sigc::mem_fun(*this, &FrameworkWindow::OnRender), false);
+	m_GLArea->signal_realize().connect(sigc::mem_fun(*this, &SynthAppWindow::OnRealize));
+	m_GLArea->signal_unrealize().connect(sigc::mem_fun(*this, &SynthAppWindow::OnUnrealize), false);
+	m_GLArea->signal_render().connect(sigc::mem_fun(*this, &SynthAppWindow::OnRender), false);
 
 	// listen for keyboard input
 	// on press
@@ -66,84 +68,44 @@ FrameworkWindow::FrameworkWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Buil
 
 //static
 //---------------------------------
-// FrameworkWindow::create
+// SynthAppWindow::create
 //
-// Create a Framework window from the generated source in window.ui
+// Create a synth app window from the generated source in window.ui
 //
-FrameworkWindow* FrameworkWindow::create(Framework *const framework)
+SynthAppWindow* SynthAppWindow::create(SynthApp *const synthApp)
 {
 	// Load the Builder file and instantiate its widgets.
 	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/window.ui");
 
 	// get the toplevel element
-	FrameworkWindow* window = nullptr;
+	SynthAppWindow* window = nullptr;
 	refBuilder->get_widget_derived("app_window", window);
 	if (!window)
 	{
 		throw std::runtime_error("No 'app_window' object in window.ui");
 	}
 
-	window->SetFramework(framework);
+	window->SetSynthApp(synthApp);
 
 	return window;
 }
 
 //---------------------------------
-// FrameworkWindow::OpenFileView
-//
-// From gtkmm example, open a file
-//
-void FrameworkWindow::OpenFileView(Glib::RefPtr<Gio::File> const& file)
-{
-	std::string const basename = file->get_basename();
-
-	auto scrolled = Gtk::make_managed<Gtk::ScrolledWindow>();
-	scrolled->set_hexpand(true);
-	scrolled->set_vexpand(true);
-	scrolled->show();
-	auto view = Gtk::make_managed<Gtk::TextView>();
-	view->set_editable(false);
-	view->set_cursor_visible(false);
-	view->show();
-	scrolled->add(*view);
-	m_Stack->add(*scrolled, basename, basename);
-
-	auto buffer = view->get_buffer();
-	try
-	{
-		char* contents = nullptr;
-		gsize length = 0;
-
-		file->load_contents(contents, length);
-		buffer->set_text(contents, contents + length);
-		g_free(contents);
-	}
-	catch (const Glib::Error& ex)
-	{
-		LOG("ExampleAppWindow::OpenFileView [" + std::string(file->get_parse_name()) + std::string("] > ") + std::string(ex.what()), Warning);
-	}
-
-	auto tag = buffer->create_tag();
-	m_Settings->bind("font", tag->property_font());
-	buffer->apply_tag(tag, buffer->begin(), buffer->end());
-}
-
-//---------------------------------
-// FrameworkWindow::Redraw
+// SynthAppWindow::Redraw
 //
 // Trigger redrawing the window
 //
-void FrameworkWindow::Redraw()
+void SynthAppWindow::Redraw()
 {
 	m_GLArea->queue_draw();
 }
 
 //---------------------------------
-// FrameworkWindow::OnRealize
+// SynthAppWindow::OnRealize
 //
 // init open gl stuff
 //
-void FrameworkWindow::OnRealize()
+void SynthAppWindow::OnRealize()
 {
 	m_GLArea->make_current();
 	try
@@ -158,11 +120,11 @@ void FrameworkWindow::OnRealize()
 }
 
 //---------------------------------
-// FrameworkWindow::OnUnrealize
+// SynthAppWindow::OnUnrealize
 //
 // Uninit open gl stuff
 //
-void FrameworkWindow::OnUnrealize()
+void SynthAppWindow::OnUnrealize()
 {
 	m_GLArea->make_current();
 	try
@@ -177,22 +139,17 @@ void FrameworkWindow::OnUnrealize()
 }
 
 //---------------------------------
-// FrameworkWindow::OnRender
+// SynthAppWindow::OnRender
 //
 // This function updates everything in a gameloops style and then calls Render, making sure to refresh itself at screen refresh rate
 //
-bool FrameworkWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
+bool SynthAppWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
 {
 	UNUSED(context);
 
-	TIME->Update();
-	PERFORMANCE->StartFrameTimer();
-
-	m_Framework->Update();
+	TriggerTick(); // if this is the first real time thing we will start the update process here
 
 	bool result = Render();
-
-	PERFORMANCE->Update();
 
 	m_GLArea->queue_draw(); // request drawing again
 
@@ -200,11 +157,11 @@ bool FrameworkWindow::OnRender(const Glib::RefPtr<Gdk::GLContext>& context)
 }
 
 //---------------------------------
-// FrameworkWindow::Render
+// SynthAppWindow::Render
 //
 // Draws the GL Area
 //
-bool FrameworkWindow::Render()
+bool SynthAppWindow::Render()
 {
 	m_Timer += TIME->DeltaTime();
 	while (m_Timer > 1.f)
