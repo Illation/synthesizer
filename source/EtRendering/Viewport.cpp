@@ -183,11 +183,11 @@ bool Viewport::Render()
 		else
 		{
 			// Draw pink to indicate that no renderer is attached
-			glClearColor(0.55f, 0.075f, 0.2f, 1.f);
-			glClear(GL_COLOR_BUFFER_BIT);
+			STATE->SetClearColor(vec4(0.55f, 0.075f, 0.2f, 1.f));
+			STATE->Clear(GL_COLOR_BUFFER_BIT);
 		}
 
-		glFlush();
+		STATE->Flush();
 	}
 	catch (const Gdk::GLError& gle)
 	{

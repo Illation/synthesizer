@@ -10,6 +10,11 @@
 //===================
 
 
+//---------------------------------
+// RenderState::Initialize
+//
+// Initialize the state with default values
+//
 void RenderState::Initialize(ivec2 dimensions)
 {
 	m_ViewportSize = dimensions;
@@ -55,6 +60,11 @@ void RenderState::Initialize(ivec2 dimensions)
 	};
 }
 
+//---------------------------------
+// RenderState::EnOrDisAble
+//
+// Enable or disable a setting
+//
 void RenderState::EnOrDisAble(bool &state, bool enabled, GLenum glState)
 {
 	if (!(state == enabled))
@@ -70,7 +80,13 @@ void RenderState::EnOrDisAble(bool &state, bool enabled, GLenum glState)
 		}
 	}
 }
-//Note the index should be validated before calling this function
+
+//---------------------------------
+// RenderState::EnOrDisAbleIndexed
+//
+// Enable or disable a setting at a specific index
+// Note the index should be validated before calling this function
+//
 void RenderState::EnOrDisAbleIndexed(std::vector<bool> &state, bool enabled, GLenum glState, uint32 index)
 {
 	if (!(state[index] == enabled))
@@ -87,6 +103,11 @@ void RenderState::EnOrDisAbleIndexed(std::vector<bool> &state, bool enabled, GLe
 	}
 }
 
+//---------------------------------
+// RenderState::SetBlendEnabled
+//
+// Set the buffers on which blending is enabled
+//
 void RenderState::SetBlendEnabled(const std::vector<bool> &blendBuffers)
 {
 	for (uint32 i = 0; i < blendBuffers.size(); i++)
@@ -94,6 +115,12 @@ void RenderState::SetBlendEnabled(const std::vector<bool> &blendBuffers)
 		SetBlendEnabled(blendBuffers[i], i);
 	}
 }
+
+//---------------------------------
+// RenderState::SetBlendEnabled
+//
+// Set whether blending is enabled on a specific buffer
+//
 void RenderState::SetBlendEnabled(bool enabled, uint32 index)
 {
 	assert((int32)index < m_MaxDrawBuffers);
@@ -102,6 +129,12 @@ void RenderState::SetBlendEnabled(bool enabled, uint32 index)
 		m_BlendEnabledIndexed.push_back(m_BlendEnabled);
 	EnOrDisAbleIndexed(m_BlendEnabledIndexed, enabled, GL_BLEND, index);
 }
+
+//---------------------------------
+// RenderState::SetBlendEnabled
+//
+// Set whether blending pixels is enabled in the render pipeline
+//
 void RenderState::SetBlendEnabled(bool enabled)
 {
 	if (m_IndividualBlend)
@@ -116,6 +149,11 @@ void RenderState::SetBlendEnabled(bool enabled)
 	EnOrDisAble(m_BlendEnabled, enabled, GL_BLEND);
 }
 
+//---------------------------------
+// RenderState::SetFaceCullingMode
+//
+// Set the culling mode (front back neither...)
+//
 void RenderState::SetFaceCullingMode(GLenum cullMode)
 {
 	if (!(m_CullFaceMode == cullMode))
@@ -125,6 +163,11 @@ void RenderState::SetFaceCullingMode(GLenum cullMode)
 	}
 }
 
+//---------------------------------
+// RenderState::SetBlendEquation
+//
+// Set the equation we use to blend pixels
+//
 void RenderState::SetBlendEquation(GLenum equation)
 {
 	if (!(m_BlendEquationRGB == equation && m_BlendEquationAlpha == equation))
@@ -134,6 +177,12 @@ void RenderState::SetBlendEquation(GLenum equation)
 		glBlendEquation(equation);
 	}
 }
+
+//---------------------------------
+// RenderState::SetBlendFunction
+//
+// Set the function we use to blend pixels
+//
 void RenderState::SetBlendFunction(GLenum sFactor, GLenum dFactor)
 {
 	if (!(m_BlendFuncSFactor == sFactor && m_BlendFuncDFactor == dFactor))
@@ -144,6 +193,11 @@ void RenderState::SetBlendFunction(GLenum sFactor, GLenum dFactor)
 	}
 }
 
+//---------------------------------
+// RenderState::SetViewport
+//
+// Set the dimensions of the current opengl viewport (not the engine viewport)
+//
 void RenderState::SetViewport(ivec2 pos, ivec2 size)
 {
 	if (!(etm::nearEqualsV(m_ViewportPosition, pos) && etm::nearEqualsV(m_ViewportSize, size)))
@@ -154,12 +208,22 @@ void RenderState::SetViewport(ivec2 pos, ivec2 size)
 	}
 }
 
+//---------------------------------
+// RenderState::GetViewport
+//
+// Get the dimensions of the current opengl viewport (not the engine viewport)
+//
 void RenderState::GetViewport(ivec2 &pos, ivec2 &size)
 {
 	pos = m_ViewportPosition;
 	size = m_ViewportSize;
 }
 
+//---------------------------------
+// RenderState::SetClearColor
+//
+// Set the colour that gets drawn when we clear the viewport
+//
 void RenderState::SetClearColor(vec4 col)
 {
 	if (!(etm::nearEqualsV(m_ClearColor, col)))
@@ -169,6 +233,11 @@ void RenderState::SetClearColor(vec4 col)
 	}
 }
 
+//---------------------------------
+// RenderState::SetShader
+//
+// Set the shader we draw with
+//
 void RenderState::SetShader(ShaderData* pShader)
 {
 	if (!(m_pBoundShader == pShader))
@@ -179,6 +248,11 @@ void RenderState::SetShader(ShaderData* pShader)
 	}
 }
 
+//---------------------------------
+// RenderState::BindFramebuffer
+//
+// Set the framebuffer we will draw to and read from
+//
 void RenderState::BindFramebuffer(GLuint handle)
 {
 	if (!(m_ReadFramebuffer == handle && m_DrawFramebuffer == handle))
@@ -188,6 +262,12 @@ void RenderState::BindFramebuffer(GLuint handle)
 		glBindFramebuffer(GL_FRAMEBUFFER, handle);
 	}
 }
+
+//---------------------------------
+// RenderState::BindReadFramebuffer
+//
+// Set the framebuffer we will read from
+//
 void RenderState::BindReadFramebuffer(GLuint handle)
 {
 	if (!(m_ReadFramebuffer == handle))
@@ -196,6 +276,12 @@ void RenderState::BindReadFramebuffer(GLuint handle)
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
 	}
 }
+
+//---------------------------------
+// RenderState::BindDrawFramebuffer
+//
+// Set the framebuffer we will draw to
+//
 void RenderState::BindDrawFramebuffer(GLuint handle)
 {
 	if (!(m_DrawFramebuffer == handle))
@@ -205,6 +291,11 @@ void RenderState::BindDrawFramebuffer(GLuint handle)
 	}
 }
 
+//---------------------------------
+// RenderState::SetActiveTexture
+//
+// Set the currently active texture unit
+//
 void RenderState::SetActiveTexture(uint32 unit)
 {
 	if (!(m_ActiveTexture == unit))
@@ -213,6 +304,12 @@ void RenderState::SetActiveTexture(uint32 unit)
 		glActiveTexture(GL_TEXTURE0 + unit);
 	}
 }
+
+//---------------------------------
+// RenderState::BindTexture
+//
+// Bind a texture to a target
+//
 void RenderState::BindTexture(GLenum target, GLuint handle)
 {
 	if (!(m_pTextureUnits[m_ActiveTexture][target] == handle))
@@ -221,6 +318,12 @@ void RenderState::BindTexture(GLenum target, GLuint handle)
 		glBindTexture(target, handle);
 	}
 }
+
+//---------------------------------
+// RenderState::LazyBindTexture
+//
+// If the current texture isn't bound to its target, bind it
+//
 void RenderState::LazyBindTexture(uint32 unit, GLenum target, GLuint handle)
 {
 	if (!(m_pTextureUnits[unit][target] == handle))
@@ -231,6 +334,11 @@ void RenderState::LazyBindTexture(uint32 unit, GLenum target, GLuint handle)
 	}
 }
 
+//---------------------------------
+// RenderState::BindVertexArray
+//
+// Bind the current vertex array that the state operates on
+//
 void RenderState::BindVertexArray(GLuint vertexArray)
 {
 	if (!(m_VertexArray == vertexArray))
@@ -243,6 +351,12 @@ void RenderState::BindVertexArray(GLuint vertexArray)
 		m_BufferTargets[GL_ELEMENT_ARRAY_BUFFER] = 0;
 	}
 }
+
+//---------------------------------
+// RenderState::BindBuffer
+//
+// Bind the current buffer that the state operates on
+//
 void RenderState::BindBuffer(GLenum target, GLuint buffer)
 {
 	if (!(m_BufferTargets[target] == buffer))
@@ -252,20 +366,167 @@ void RenderState::BindBuffer(GLenum target, GLuint buffer)
 	}
 }
 
-void RenderState::DrawArrays(GLenum mode, uint32 first, uint32 count)
+//---------------------------------
+// RenderState::SetLineWidth
+//
+// Set the width of lines that are drawn
+//
+void RenderState::SetLineWidth(float const lineWidth)
+{
+	if (!etm::nearEquals(m_LineWidth, lineWidth))
+	{
+		m_LineWidth = lineWidth;
+		glLineWidth(m_LineWidth);
+	}
+}
+
+//---------------------------------
+// RenderState::DrawArrays
+//
+// Draw vertex data (without indices)
+//
+void RenderState::DrawArrays(GLenum mode, uint32 first, uint32 count) 
 {
 	glDrawArrays(mode, first, count);
 	PERFORMANCE->m_DrawCalls++;
 }
 
+//---------------------------------
+// RenderState::DrawElements
+//
+// Draw vertex data with indices
+//
 void RenderState::DrawElements(GLenum mode, uint32 count, GLenum type, const void * indices)
 {
 	glDrawElements(mode, count, type, indices);
 	PERFORMANCE->m_DrawCalls++;
 }
 
+//---------------------------------
+// RenderState::DrawElementsInstanced
+//
+// Draw instanced vertex data with indices
+//
 void RenderState::DrawElementsInstanced(GLenum mode, uint32 count, GLenum type, const void * indices, uint32 primcount)
 {
 	glDrawElementsInstanced(mode, count, type, indices, primcount);
 	PERFORMANCE->m_DrawCalls++;
+}
+
+//---------------------------------
+// RenderState::Flush
+//
+// Force OpenGL to execute all commands now
+//
+void RenderState::Flush() const
+{
+	glFlush();
+}
+
+//---------------------------------
+// RenderState::Clear
+//
+// Clear the part of the currently set viewport that is mapped to the mask
+//
+void RenderState::Clear(GLbitfield mask) const
+{
+	glClear(mask);
+}
+
+//---------------------------------
+// RenderState::GenerateVertexArrays
+//
+// Generate a vertex array
+//
+void RenderState::GenerateVertexArrays(GLsizei n, GLuint *arrays) const
+{
+	glGenVertexArrays(n, arrays);
+}
+
+//---------------------------------
+// RenderState::GenerateBuffers
+//
+// Generate a buffer
+//
+void RenderState::GenerateBuffers(GLsizei n, GLuint *buffers) const
+{
+	glGenBuffers(n, buffers);
+}
+
+//---------------------------------
+// RenderState::DeleteVertexArrays
+//
+// Delete a vertex array
+//
+void RenderState::DeleteVertexArrays(GLsizei n, GLuint *arrays) const
+{
+	glDeleteVertexArrays(n, arrays);
+}
+
+//---------------------------------
+// RenderState::DeleteBuffers
+//
+// Delete a buffer
+//
+void RenderState::DeleteBuffers(GLsizei n, GLuint *buffers) const
+{
+	glDeleteBuffers(n, buffers);
+}
+
+//---------------------------------
+// RenderState::SetBufferData
+//
+// Fill the buffer at target with an array of data
+//
+void RenderState::SetBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) const
+{
+	glBufferData(target, size, data, usage);
+}
+
+//---------------------------------
+// RenderState::SetVertexAttributeArrayEnabled
+//
+// Enable or disable an attribute at an index in the current vertex array
+//
+void RenderState::SetVertexAttributeArrayEnabled(GLuint index, bool enabled) const
+{
+	if (enabled)
+	{
+		glEnableVertexAttribArray(index);
+	}
+	else
+	{
+		glDisableVertexAttribArray(index);
+	}
+}
+
+//---------------------------------
+// RenderState::DefineVertexAttributePointer
+//
+// Define the type of data the attribute at a certain index in the current vertex array is mapped to
+//
+void RenderState::DefineVertexAttributePointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLvoid const* pointer) 
+	const
+{
+	glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+}
+
+//---------------------------------
+// RenderState::MapBuffer
+//
+// Map the data of a buffer to a pointer on the CPU so that it can be modified
+//
+void* RenderState::MapBuffer(GLenum target, GLenum access) const
+{
+	return glMapBuffer(target, access);
+}
+
+//---------------------------------
+// RenderState::UnmapBuffer
+//
+// Unmap a buffer from the pointer it's mapped to on the CPU
+//
+void RenderState::UnmapBuffer(GLenum target) const
+{
+	glUnmapBuffer(target);
 }

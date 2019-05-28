@@ -24,22 +24,22 @@ void OscillatorRenderer::OnInit()
 	InitShader();
 
 	//Generate buffers and arrays
-	glGenVertexArrays(1, &m_Vao);
-	glGenBuffers(1, &m_Vbo);
+	STATE->GenerateVertexArrays(1, &m_Vao);
+	STATE->GenerateBuffers(1, &m_Vbo);
 
 	//bind
 	STATE->BindVertexArray(m_Vao);
 	STATE->BindBuffer(GL_ARRAY_BUFFER, m_Vbo);
 
 	//set data and attributes
-	glBufferData(GL_ARRAY_BUFFER, m_BufferSize, NULL, GL_DYNAMIC_DRAW);
+	STATE->SetBufferData(GL_ARRAY_BUFFER, m_BufferSize, NULL, GL_DYNAMIC_DRAW);
 
 	//input layout
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
+	STATE->SetVertexAttributeArrayEnabled(0, true);
+	STATE->SetVertexAttributeArrayEnabled(1, true);
 
-	glVertexAttribPointer(0, (GLint)3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(LineVertex), (GLvoid*)offsetof(LineVertex, pos));
-	glVertexAttribPointer(1, (GLint)4, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(LineVertex), (GLvoid*)offsetof(LineVertex, col));
+	STATE->DefineVertexAttributePointer(0, (GLint)3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(LineVertex), (GLvoid*)offsetof(LineVertex, pos));
+	STATE->DefineVertexAttributePointer(1, (GLint)4, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(LineVertex), (GLvoid*)offsetof(LineVertex, col));
 
 	//unbind
 	STATE->BindBuffer(GL_ARRAY_BUFFER, 0);
@@ -53,8 +53,8 @@ void OscillatorRenderer::OnInit()
 //
 void OscillatorRenderer::OnDeinit()
 {
-	glDeleteVertexArrays(1, &m_Vao);
-	glDeleteBuffers(1, &m_Vbo);
+	STATE->DeleteVertexArrays(1, &m_Vao);
+	STATE->DeleteBuffers(1, &m_Vbo);
 	m_Lines.clear();
 	m_MetaData.clear();
 }
@@ -86,13 +86,13 @@ void OscillatorRenderer::OnRender()
 			m_Timer -= 1.f;
 		}
 
-		glClearColor(0.05f, 0.075f, 0.2f * m_Timer, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		STATE->SetClearColor(vec4(0.05f, 0.075f, 0.2f * m_Timer, 1.f));
+		STATE->Clear(GL_COLOR_BUFFER_BIT);
 		return;
 	}
 
 	STATE->SetClearColor(vec4(0.01f, 0.02f, 0.1f, 1.f));
-	glClear(GL_COLOR_BUFFER_BIT);
+	STATE->Clear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(m_ShaderProgram);
 
@@ -104,7 +104,7 @@ void OscillatorRenderer::OnRender()
 
 	for (const auto& meta : m_MetaData)
 	{
-		glLineWidth(meta.thickness);
+		STATE->SetLineWidth(meta.thickness);
 		STATE->DrawArrays(GL_LINES, meta.start, meta.size);
 	}
 
@@ -137,13 +137,13 @@ void OscillatorRenderer::UpdateBuffer()
 			m_BufferSize = (uint32)m_Lines.size() * sizeof(LineVertex);
 		}
 
-		glBufferData(GL_ARRAY_BUFFER, m_BufferSize, m_Lines.data(), GL_DYNAMIC_DRAW);
+		STATE->SetBufferData(GL_ARRAY_BUFFER, m_BufferSize, m_Lines.data(), GL_DYNAMIC_DRAW);
 	}
 	else
 	{
-		GLvoid* p = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		GLvoid* p = STATE->MapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		memcpy(p, m_Lines.data(), sizeof(LineVertex)*m_Lines.size());
-		glUnmapBuffer(GL_ARRAY_BUFFER);
+		STATE->UnmapBuffer(GL_ARRAY_BUFFER);
 	}
 
 	STATE->BindBuffer(GL_ARRAY_BUFFER, 0);

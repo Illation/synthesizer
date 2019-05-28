@@ -16,10 +16,15 @@ class ShaderData;
 class RenderState
 {
 public:
+
+	// init deinit
+	//--------------
 	RenderState() = default;
 
 	void Initialize(ivec2 dimensions);
 
+	// State changes
+	//--------------
 	void SetDepthEnabled(bool enabled) { EnOrDisAble(m_DepthTestEnabled, enabled, GL_DEPTH_TEST); }
 	void SetBlendEnabled(bool enabled);
 	void SetBlendEnabled(bool enabled, uint32 index);
@@ -52,10 +57,32 @@ public:
 	void BindVertexArray(GLuint vertexArray);
 	void BindBuffer(GLenum target, GLuint buffer);
 
+	void SetLineWidth(float const lineWidth);
+
 	//Draw Calls
+	//--------------
 	void DrawArrays(GLenum mode, uint32 first, uint32 count);
 	void DrawElements(GLenum mode, uint32 count, GLenum type, const void * indices);
 	void DrawElementsInstanced(GLenum mode, uint32 count, GLenum type, const void * indices, uint32 primcount);
+
+	// other commands
+	//--------------
+	void Flush() const;
+	void Clear(GLbitfield mask) const;
+
+	void GenerateVertexArrays(GLsizei n, GLuint *arrays) const;
+	void GenerateBuffers(GLsizei n, GLuint *buffers) const;
+
+	void DeleteVertexArrays(GLsizei n, GLuint *arrays) const;
+	void DeleteBuffers(GLsizei n, GLuint *buffers) const;
+
+	void SetBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) const;
+	void SetVertexAttributeArrayEnabled(GLuint index, bool enabled) const; // could at some point be a member on VertexArray data object
+
+	void DefineVertexAttributePointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLvoid const* pointer) const;
+
+	void* MapBuffer(GLenum target, GLenum access) const;
+	void UnmapBuffer(GLenum target) const;
 
 private:
 
@@ -98,4 +125,6 @@ private:
 
 	GLuint m_VertexArray = 0;
 	std::map<GLenum, GLuint> m_BufferTargets;
+
+	float m_LineWidth = 1.f;
 };
