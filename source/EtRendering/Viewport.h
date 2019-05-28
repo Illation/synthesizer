@@ -1,6 +1,7 @@
 #pragma once
 
 #include <EtCore/UpdateCycle/RealTimeTickTriggerer.h>
+#include <EtRendering/RenderState.h>
 
 #include <gtkmm/glarea.h>
 
@@ -23,6 +24,10 @@ public:
 
 	void SetRenderer(I_Renderer* renderer); // takes ownership
 
+	RenderState* GetState() { return m_RenderState; }
+
+	static RenderState* GetGlobalRenderState();
+
 protected:
 
 	void OnRealize();
@@ -33,17 +38,22 @@ protected:
 private:
 	bool Render();
 
-private:
+	void MakeCurrent();
+
+
 	// Data
 	///////
+
+private:
+	static Viewport* g_CurrentViewport;
+
 
 	Gtk::GLArea* m_GLArea = nullptr;
 
 	I_Renderer* m_Renderer = nullptr;
+	RenderState* m_RenderState = nullptr; // since a viewport has it's own open gl context, each viewport has it's own render state
 
 	ivec2 m_Dimensions;
 
 	bool m_IsRealized = false;
 };
-
-

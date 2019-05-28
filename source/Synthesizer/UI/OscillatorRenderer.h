@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer.h"
+#include <EtRendering/Renderer.h>
 
 #include <epoxy/gl.h>
 

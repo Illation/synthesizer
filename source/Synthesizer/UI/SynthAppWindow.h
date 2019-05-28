@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Viewport.h"
+#include <EtRendering/Viewport.h>
 
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/builder.h>

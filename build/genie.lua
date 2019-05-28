@@ -226,6 +226,7 @@ project "Synthesizer"
 		"Vendor"
 		, "EtCore" 
 		, "EtMath" 
+		, "EtRendering"
 	}
 
 	--additional includedirs
@@ -248,6 +249,37 @@ project "Synthesizer"
 
 	pchheader "stdafx.h"
 	pchsource "../source/Synthesizer/stdafx.cpp"
+	
+
+-- Rendering system from E.T.Engine
+project "EtRendering"
+    kind "StaticLib"
+
+	location "../source/EtRendering"
+	
+	libOutputDirectories("EtRendering")
+
+	--Internal static links
+    links{ 
+		"EtCore" 
+		, "EtMath" 
+	}
+
+	--additional includedirs
+	local ProjBase = path.join(SOURCE_DIR, "EtRendering") 
+	includedirs { ProjBase }
+
+    files { 
+		path.join(SOURCE_DIR, "EtRendering/**.cpp"), 
+		path.join(SOURCE_DIR, "EtRendering/**.inl"), 
+		path.join(SOURCE_DIR, "EtRendering/**.h"), 
+	}
+
+	--additional includedirs
+	includedirs { SOURCE_DIR }
+
+	pchheader "stdafx.h"
+	pchsource "../source/EtRendering/stdafx.cpp"
 
 
 -- Math library from E.T.Engine

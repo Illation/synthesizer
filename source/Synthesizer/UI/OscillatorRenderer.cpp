@@ -28,8 +28,8 @@ void OscillatorRenderer::OnInit()
 	glGenBuffers(1, &m_Vbo);
 
 	//bind
-	glBindVertexArray(m_Vao);
-	glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
+	STATE->BindVertexArray(m_Vao);
+	STATE->BindBuffer(GL_ARRAY_BUFFER, m_Vbo);
 
 	//set data and attributes
 	glBufferData(GL_ARRAY_BUFFER, m_BufferSize, NULL, GL_DYNAMIC_DRAW);
@@ -42,8 +42,8 @@ void OscillatorRenderer::OnInit()
 	glVertexAttribPointer(1, (GLint)4, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(LineVertex), (GLvoid*)offsetof(LineVertex, col));
 
 	//unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	STATE->BindBuffer(GL_ARRAY_BUFFER, 0);
+	STATE->BindVertexArray(0);
 }
 
 //---------------------------------
@@ -91,26 +91,26 @@ void OscillatorRenderer::OnRender()
 		return;
 	}
 
-	glClearColor(0.01f, 0.02f, 0.1f, 1.f);
+	STATE->SetClearColor(vec4(0.01f, 0.02f, 0.1f, 1.f));
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(m_ShaderProgram);
 
 	UpdateBuffer();
 
-	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
-	glBlendFunc(GL_ONE, GL_ZERO);
+	STATE->SetBlendEnabled(true);
+	STATE->SetBlendEquation(GL_FUNC_ADD);
+	STATE->SetBlendFunction(GL_ONE, GL_ZERO);
 
 	for (const auto& meta : m_MetaData)
 	{
 		glLineWidth(meta.thickness);
-		glDrawArrays(GL_LINES, meta.start, meta.size);
+		STATE->DrawArrays(GL_LINES, meta.start, meta.size);
 	}
 
-	glBindVertexArray(0);
+	STATE->BindVertexArray(0);
 
-	glDisable(GL_BLEND);
+	STATE->SetBlendEnabled(false);
 
 	m_Lines.clear();
 	m_MetaData.clear();
@@ -124,10 +124,10 @@ void OscillatorRenderer::OnRender()
 void OscillatorRenderer::UpdateBuffer()
 {
 	//Bind Object vertex array
-	glBindVertexArray(m_Vao);
+	STATE->BindVertexArray(m_Vao);
 
 	//Send the vertex buffer again
-	glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
+	STATE->BindBuffer(GL_ARRAY_BUFFER, m_Vbo);
 
 	bool bufferResize = m_Lines.size() * sizeof(LineVertex) > m_BufferSize;
 	if (!m_Vbo || bufferResize) //first creation or resize
@@ -146,7 +146,7 @@ void OscillatorRenderer::UpdateBuffer()
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	STATE->BindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 //---------------------------------
@@ -284,12 +284,13 @@ void OscillatorRenderer::DrawOscillatorLines()
 
 	// Get samples for one phase from oscillator
 	std::vector<float> samples;
+	float freq = 10000.f;
 
 	// one sample per pixel
-	float delta = 1.f / static_cast<float>(m_PixelWidth);
+	float delta = 1.f / (static_cast<float>(m_PixelWidth) * freq);
 
 	// get samples from a temporary oscillator created from it's parameters
-	Oscillator osc(1.f, m_OscillatorParams);
+	Oscillator osc(freq, m_OscillatorParams);
 	for (uint32 i = 0; i < m_PixelWidth; ++i)
 	{
 		samples.emplace_back(osc.GetSample(delta));

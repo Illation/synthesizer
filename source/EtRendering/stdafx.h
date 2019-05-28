@@ -13,11 +13,25 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <algorithm>
+#include <cstdint>
 #pragma endregion stl
 
 #pragma region
 #include <EtMath/MathInc.h>
 #pragma endregion math
+
+#pragma region
+template<class T>
+inline void SafeDelete(T &pObjectToDelete)
+{
+	if (pObjectToDelete != 0)
+	{
+		delete(pObjectToDelete);
+		pObjectToDelete = 0;
+	}
+}
+#pragma endregion Templates
 
 //platform independant utility to suppress unused parameter warnings from https://stackoverflow.com/questions/4851075
 // use expression as sub-expression,

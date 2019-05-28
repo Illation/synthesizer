@@ -7,6 +7,9 @@ public:
 	PerformanceInfo();
 	virtual ~PerformanceInfo();
 
+	uint32 m_DrawCalls = 0;
+	uint32 m_PrevDrawCalls = 0;
+
 	int32 GetRegularFPS() { return m_RegularFPS; }
 	float GetFrameMS() { return m_FrameMS; }
 

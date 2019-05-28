@@ -10,6 +10,9 @@ PerformanceInfo::~PerformanceInfo()
 
 void PerformanceInfo::Update()
 {
+	m_PrevDrawCalls = m_DrawCalls;
+	m_DrawCalls = 0;
+
 	m_RegFPSTimer += TIME->DeltaTime();
 	if (m_RegFPSTimer > 1.f)
 	{
