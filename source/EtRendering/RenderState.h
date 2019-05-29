@@ -84,6 +84,20 @@ public:
 	void* MapBuffer(GLenum target, GLenum access) const;
 	void UnmapBuffer(GLenum target) const;
 
+	GLuint CreateShader(GLenum shaderType) const;
+	GLuint CreateProgram() const;
+	void DeleteShader(GLuint shader);
+	void DeleteProgram(GLuint program);
+
+	void SetShaderSource(GLuint shader, GLsizei count, GLchar const **string, int32* length) const;
+	void CompileShader(GLuint shader) const;
+	void BindFragmentDataLocation(GLuint program, GLuint colorNumber, std::string const& name) const;
+	void AttachShader(GLuint program, GLuint shader) const;
+	void LinkProgram(GLuint program) const;
+
+	void GetShaderIV(GLuint shader, GLenum pname, GLint *params) const;
+	void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) const;
+
 private:
 
 	void EnOrDisAble(bool &state, bool enabled, GLenum glState);

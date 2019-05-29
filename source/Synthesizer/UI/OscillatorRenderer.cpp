@@ -204,15 +204,15 @@ void OscillatorRenderer::InitShader()
 
 
 	//Combine Shaders
-	m_ShaderProgram = glCreateProgram();
-	glAttachShader(m_ShaderProgram, vertexShader);
-	glAttachShader(m_ShaderProgram, fragmentShader);
-	glBindFragDataLocation(m_ShaderProgram, 0, "outColor");
+	m_ShaderProgram = STATE->CreateProgram();
+	STATE->AttachShader(m_ShaderProgram, vertexShader);
+	STATE->AttachShader(m_ShaderProgram, fragmentShader);
+	STATE->BindFragmentDataLocation(m_ShaderProgram, 0, "outColor");
 
-	glLinkProgram(m_ShaderProgram);
+	STATE->LinkProgram(m_ShaderProgram);
 
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	STATE->DeleteShader(vertexShader);
+	STATE->DeleteShader(fragmentShader);
 }
 
 //---------------------------------
@@ -223,17 +223,17 @@ void OscillatorRenderer::InitShader()
 GLuint OscillatorRenderer::CompileShader(std::string const& shaderSourceStr, GLenum type)
 {
 	const char *shaderSource = shaderSourceStr.c_str();
-	GLuint shader = glCreateShader(type);
-	glShaderSource(shader, 1, &shaderSource, NULL);
+	GLuint shader = STATE->CreateShader(type);
+	STATE->SetShaderSource(shader, 1, &shaderSource, nullptr);
 
 	//error handling
 	GLint status;
-	glCompileShader(shader);
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+	STATE->CompileShader(shader);
+	STATE->GetShaderIV(shader, GL_COMPILE_STATUS, &status);
 	if (!(status == GL_TRUE))
 	{
 		char buffer[512];
-		glGetShaderInfoLog(shader, 512, NULL, buffer);
+		STATE->GetShaderInfoLog(shader, 512, NULL, buffer);
 		std::string sName;
 		switch (type)
 		{

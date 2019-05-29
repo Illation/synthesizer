@@ -530,3 +530,113 @@ void RenderState::UnmapBuffer(GLenum target) const
 {
 	glUnmapBuffer(target);
 }
+
+//---------------------------------
+// RenderState::CreateShader
+//
+// Create a shader object and return its handle
+//
+GLuint RenderState::CreateShader(GLenum shaderType) const
+{
+	return glCreateShader(shaderType);
+}
+
+//---------------------------------
+// RenderState::CreateProgram
+//
+// Create a program object and return its handle
+//
+GLuint RenderState::CreateProgram() const
+{
+	return glCreateProgram();
+}
+
+//---------------------------------
+// RenderState::DeleteShader
+//
+// Delete a shader by its handle
+//
+void RenderState::DeleteShader(GLuint shader)
+{
+	glDeleteShader(shader);
+}
+
+//---------------------------------
+// RenderState::DeleteProgram
+//
+// Delete a program by its handle
+//
+void RenderState::DeleteProgram(GLuint program)
+{
+	glDeleteProgram(program);
+}
+
+//---------------------------------
+// RenderState::SetShaderSource
+//
+// Set the source code of a shader
+//
+void RenderState::SetShaderSource(GLuint shader, GLsizei count, GLchar const **string, int32* length) const
+{
+	glShaderSource(shader, count, string, length);
+}
+
+//---------------------------------
+// RenderState::CompileShader
+//
+// Compile a shader
+//
+void RenderState::CompileShader(GLuint shader) const
+{
+	glCompileShader(shader);
+}
+
+//---------------------------------
+// RenderState::BindFragmentDataLocation
+//
+// Set the return member of a fragment shader
+//
+void RenderState::BindFragmentDataLocation(GLuint program, GLuint colorNumber, std::string const& name) const
+{
+	glBindFragDataLocation(program, colorNumber, name.c_str());
+}
+
+//---------------------------------
+// RenderState::AttachShader
+//
+// Attach a shader to a program before linking
+//
+void RenderState::AttachShader(GLuint program, GLuint shader) const
+{
+	glAttachShader(program, shader);
+}
+
+//---------------------------------
+// RenderState::LinkProgram
+//
+// Link the shaders in a program
+//
+void RenderState::LinkProgram(GLuint program) const
+{
+	glLinkProgram(program);
+}
+
+//---------------------------------
+// RenderState::GetShaderIV
+//
+// Get an integer value from a shader
+//
+void RenderState::GetShaderIV(GLuint shader, GLenum pname, GLint *params) const
+{
+	glGetShaderiv(shader, pname, params);
+}
+
+//---------------------------------
+// RenderState::GetShaderInfoLog
+//
+// Get logged information about a shader
+//
+void RenderState::GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) const
+{
+	glGetShaderInfoLog(shader, maxLength, length, infoLog);
+}
