@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "FileUtil.h"
 
+#include <giomm/resource.h>
 #include <limits>
 
 static std::vector<std::string> newLineTokens{ "\r\n", "\n\r", "\n", "\r" };
@@ -13,6 +14,28 @@ std::string FileUtil::AsText( const std::vector<uint8> &data )
 std::vector<uint8> FileUtil::FromText( const std::string &data )
 {
 	return std::vector<uint8>( data.begin(), data.end() );
+}
+
+bool FileUtil::GetCompiledResource(std::string const& path, std::vector<uint8>& data)
+{
+	Glib::RefPtr<Glib::Bytes const> glibBytes = Gio::Resource::lookup_data_global(path, Gio::ResourceLookupFlags::RESOURCE_LOOKUP_FLAGS_NONE);
+
+	gsize dataSize = glibBytes->get_size();
+	if (dataSize == 0u)
+	{
+		LOG("FileUtil::GetCompiledResource > data retrieved from resource '" + path + std::string("' has size 0!"), LogLevel::Warning);
+		return false;
+	}
+
+	uint8 const* dataArray = static_cast<uint8 const*>(glibBytes->get_data(dataSize));
+
+	data.clear();
+	for (size_t i = 0; i < dataSize; ++i)
+	{
+		data.emplace_back(dataArray[i]);
+	}
+
+	return true;
 }
 
 bool FileUtil::ParseLine( std::string &input, std::string &extractedLine )

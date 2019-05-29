@@ -1,7 +1,11 @@
 #pragma once
-#include <vector>
-#include <typeinfo>
-#include "ContentLoader.h"
+#include <EtCore/Helper/Singleton.h>
+
+#include <rttr/type>
+
+
+// forward declarations
+class I_Asset;
 
 
 //---------------------------------
@@ -9,40 +13,61 @@
 //
 // Class that manages the lifetime of assets
 //
-class ContentManager
+class ContentManager : public Singleton<ContentManager>
 {
+public:
+	// Definitions
+	//---------------------
+
+	friend class Singleton<ContentManager>;
+
+	static constexpr char s_DatabasePath[] = "/com/leah-lindner/et_core/asset_database.json";
+
+	//---------------------------------
+	// AssetDatabase
+	//
+	// Container for all assets
+	//
+	struct AssetDatabase final
+	{
+	public:
+		// Definitions
+		//---------------------
+		typedef std::vector<I_Asset*> T_AssetList;
+		struct AssetCache final
+		{
+			std::type_info const& GetType() const;
+
+			T_AssetList cache;
+
+			RTTR_ENABLE()
+		};
+
+		// Data
+		////////
+		std::vector<AssetCache> caches;
+
+		RTTR_ENABLE()
+	};
+
 private:
 	// Construct destruct
 	//---------------------
 	ContentManager() = default;
-	~ContentManager() = default;
+	~ContentManager();
 	// Protect from copy construction
 	ContentManager(const ContentManager& t);
 	ContentManager& operator=(const ContentManager& t);
 
 public:
-	// Loader organization
+	// Managing assets
 	//---------------------
-	static void AddLoader(I_ContentLoader* loader);
-
-	static void ReleaseLoaders();
-
-	template<class T, class DataType>
-	static T* GetLoader();
-
-	// Loading content
-	//---------------------
-	template<class T> 
-	static T* Load(const std::string& assetFile);
-
-	template<class T>
-	static T* Reload(const std::string& assetFile);
+	void Init();
+	void Deinit();
 
 private:
 	// Data
 	///////
 
-	static std::vector<I_ContentLoader*> m_Loaders;
+	AssetDatabase m_Database;
 };
-
-#include "ContentManager.inl"

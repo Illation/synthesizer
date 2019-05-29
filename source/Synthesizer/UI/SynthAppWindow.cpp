@@ -74,7 +74,7 @@ SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builde
 SynthAppWindow* SynthAppWindow::create(SynthApp *const synthApp)
 {
 	// Load the Builder file and instantiate its widgets.
-	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/window.ui");
+	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/ui/window.ui");
 
 	// get the toplevel element
 	SynthAppWindow* window = nullptr;

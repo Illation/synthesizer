@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gresources>
+  <gresource prefix="/com/leah-lindner/synthesizer">
+    <file preprocess="xml-stripblanks">ui/window.ui</file>
+    <file preprocess="xml-stripblanks">ui/app_menu.ui</file>
+    <file preprocess="xml-stripblanks">ui/prefs.ui</file>
+  </gresource>
+  <gresource prefix="/com/leah-lindner/et_core">
+    <file>asset_database.json</file>
+  </gresource>
+</gresources>

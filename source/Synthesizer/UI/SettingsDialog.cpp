@@ -61,7 +61,7 @@ SettingsDialog::SettingsDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::
 SettingsDialog* SettingsDialog::create(Gtk::Window& parent)
 {
 	// Load the Builder file and instantiate its widgets.
-	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/prefs.ui");
+	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create_from_resource("/com/leah-lindner/synthesizer/ui/prefs.ui");
 
 	SettingsDialog* dialog = nullptr;
 	refBuilder->get_widget_derived("prefs_dialog", dialog);

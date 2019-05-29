@@ -1,57 +1,75 @@
 #include "stdafx.h"
 #include "ContentManager.h"
 
+#include "Asset.h"
+
+#include <EtCore/Reflection/Serialization.h>
+
+#include <rttr/registration>
+
+#include <EtCore/FileSystem/FileUtil.h>
+
 
 //===================
 // Content Manager
 //===================
 
 
-// static
-std::vector<I_ContentLoader*> ContentManager::m_Loaders = std::vector<I_ContentLoader*>();
+// reflection
+RTTR_REGISTRATION
+{
+	using namespace rttr;
 
-// Loader organization
-////////////////////////
+	registration::class_<ContentManager::AssetDatabase::AssetCache>("asset cache")
+		.property("cache", &ContentManager::AssetDatabase::AssetCache::cache);
+
+	registration::class_<ContentManager::AssetDatabase>("asset database")
+		.property("caches", &ContentManager::AssetDatabase::caches) ;
+}
+
 
 //---------------------------------
-// ContentManager::AddLoader
+// ContentManager::AssetDatabase::AssetCache::GetType
 //
-// Add a loader to the content manager
+// Get the type of an asset cache
 //
-void ContentManager::AddLoader(I_ContentLoader* loader)
-{ 
-	for(I_ContentLoader *ldr:m_Loaders)
-	{	
-		if(ldr->GetType()==loader->GetType())
-		{
-			if (!(loader == nullptr))
-			{
-				delete loader;
-				loader = nullptr;
-			}
-			break;
-		}
+std::type_info const& ContentManager::AssetDatabase::AssetCache::GetType() const
+{
+	if (cache.size() > 0)
+	{
+		return cache[0]->GetType();
 	}
+	return typeid(nullptr);
+}
 
-	m_Loaders.push_back(loader);
+
+// Managing assets
+////////////////////////
+
+ContentManager::~ContentManager()
+{
+	Deinit();
 }
 
 //---------------------------------
-// ContentManager::ReleaseLoaders
+// ContentManager::Init
 //
-// Release all loaders from the content manager, deleting the assets in the process
+// Load the asset database
 //
-void ContentManager::ReleaseLoaders()
+void ContentManager::Init()
 {
-	for (I_ContentLoader *ldr : m_Loaders)
+	if (!serialization::DeserializeFromJsonResource(s_DatabasePath, m_Database))
 	{
-		ldr->Unload();
-		if (!(ldr == nullptr))
-		{
-			delete ldr;
-			ldr = nullptr;
-		}
+		LOG("ContentManager::Init > unable to deserialize asset database at '" + std::string(s_DatabasePath) + std::string("'"), LogLevel::Error);
 	}
+}
 
-	m_Loaders.clear();
+//---------------------------------
+// ContentManager::Deinit
+//
+// Delete all remaining open assets
+//
+void ContentManager::Deinit()
+{
+	m_Database.caches.clear();
 }

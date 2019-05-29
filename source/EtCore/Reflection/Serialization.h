@@ -35,6 +35,9 @@ namespace serialization
 	bool DeserializeFromFile(std::string const& filePath, T& outObject);
 
 	template<typename T>
+	bool DeserializeFromJsonResource(std::string const& resourcePath, T& outObject);
+
+	template<typename T>
 	bool DeserializeFromJson(JSON::Object* const parentObj, T& outObject);
 
 

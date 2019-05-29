@@ -14,10 +14,10 @@
 class I_ContentLoader
 {
 public:
-	I_ContentLoader(void){}
-	virtual ~I_ContentLoader(void){}
+	I_ContentLoader(){}
+	virtual ~I_ContentLoader(){}
 
-	virtual const std::type_info& GetType() const = 0;
+	virtual std::type_info const& GetType() const = 0;
 	virtual void Unload() = 0;
 
 private:
@@ -48,11 +48,11 @@ public:
 	//---------------------
 	T* ReloadContent(const std::string &assetFile);
 	T* GetContent(const std::string& assetFile);
-	virtual void Unload();
+	void Unload() override;
 
 	// Utility
 	//---------------------
-	virtual const std::type_info& GetType() const { return typeid(T); }
+	std::type_info const& GetType() const override { return typeid(T); }
 
 protected:
 	// Abstract - to be implemented by specific content loaders

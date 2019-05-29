@@ -10,6 +10,7 @@
 #include <UI/SynthAppWindow.h>
 #include <UI/SettingsDialog.h>
 
+#include <EtCore/Content/ContentManager.h>
 #include <EtCore/Helper/Commands.h>
 #include <EtCore/Helper/InputManager.h>
 #include <EtCore/UpdateCycle/TickManager.h>
@@ -88,6 +89,8 @@ SynthApp::~SynthApp()
 	InputManager::GetInstance()->DestroyInstance();
 	Config::GetInstance()->DestroyInstance();
 
+	ContentManager::GetInstance()->DestroyInstance();
+
 	Logger::Release();
 	TickManager::GetInstance()->DestroyInstance();
 }
@@ -154,7 +157,7 @@ void SynthApp::on_startup()
 	Glib::RefPtr<Gtk::Builder> refBuilder = Gtk::Builder::create();
 	try
 	{
-		refBuilder->add_from_resource("/com/leah-lindner/synthesizer/app_menu.ui");
+		refBuilder->add_from_resource("/com/leah-lindner/synthesizer/ui/app_menu.ui");
 	}
 	catch (const Glib::Error& ex)
 	{
@@ -225,6 +228,8 @@ void SynthApp::InitializeUtilities()
 	LOG("\tTime per buffer   > " + std::to_string(output.TimePerBuffer));
 	LOG("\tTime per sample   > " + std::to_string(output.TimePerSample));
 	LOG("");
+
+	ContentManager::GetInstance()->Init();
 
 	InputManager::GetInstance();
 

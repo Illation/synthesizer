@@ -150,6 +150,40 @@ bool DeserializeFromFile(std::string const& filePath, T& outObject)
 }
 
 //---------------------------------
+// DeserializeFromJsonResource
+//
+// Create the reflected type from a json string that is compiled into the app
+// Returns nullptr if deserialization is unsuccsesful. 
+//
+template<typename T>
+bool DeserializeFromJsonResource(std::string const& resourcePath, T& outObject)
+{
+	// get binary data from compiled resource
+	std::vector<uint8> data;
+	if (!FileUtil::GetCompiledResource(resourcePath, data))
+	{
+		LOG("DeserializeFromJsonResource > couldn't get data from resource '" + resourcePath + std::string("'"), LogLevel::Warning);
+		return false;
+	}
+
+	// read binary resource into a string
+	std::string const content(FileUtil::AsText(data));
+
+	// Read the string into a json parser
+	JSON::Parser parser = JSON::Parser(content);
+
+	// if we don't have a root object parsing json was unsuccesful
+	JSON::Object* root = parser.GetRoot();
+	if (!root)
+	{
+		LOG("DeserializeFromJsonResource > unable to parse '" + resourcePath + std::string("' to JSON!"), Warning);
+		return false;
+	}
+
+	return DeserializeFromJson(root, outObject);
+}
+
+//---------------------------------
 // DeserializeFromJson
 //
 // Create the reflected type from JSON data. 
