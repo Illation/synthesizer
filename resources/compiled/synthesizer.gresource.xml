@@ -7,5 +7,6 @@
   </gresource>
   <gresource prefix="/com/leah-lindner/et_core">
     <file>asset_database.json</file>
+    <file>assets/OscillatorRenderer.glsl</file>
   </gresource>
 </gresources>

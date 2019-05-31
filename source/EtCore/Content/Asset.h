@@ -23,7 +23,7 @@ public:
 	virtual std::type_info const& GetType() const = 0;
 	virtual bool IsLoaded() const = 0;
 	virtual bool Load() = 0;
-	virtual void Unload() = 0;
+	virtual void Unload() {}
 
 	// Utility
 	//---------------------	
@@ -65,17 +65,21 @@ public:
 
 	// Interface
 	//---------------------
-	virtual bool Load() = 0;
+	virtual bool Load() { return false; }
 
 	// Utility
 	//---------------------
 	std::type_info const& GetType() const override { return typeid(T); }
 	bool IsLoaded() const override { return m_Data != nullptr; }
-	void Unload() override { SafeDelete(m_Data); }
+	void Unload() override;
 
 private:
 	// Data
 	///////
 
 	T* m_Data = nullptr;
+
+	RTTR_ENABLE(I_Asset)
 };
+
+#include "Asset.inl"

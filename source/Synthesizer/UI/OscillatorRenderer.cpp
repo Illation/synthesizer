@@ -2,6 +2,7 @@
 #include "OscillatorRenderer.h"
 
 #include <Synth/Oscillator.h>
+#include <EtRendering/ShaderData.h>
 
 
 
@@ -22,6 +23,9 @@ OscillatorRenderer::OscillatorRenderer(OscillatorParameters const& osc)
 void OscillatorRenderer::OnInit()
 {
 	InitShader();
+
+	ShaderAsset asset;
+	asset.Load();
 
 	//Generate buffers and arrays
 	STATE->GenerateVertexArrays(1, &m_Vao);

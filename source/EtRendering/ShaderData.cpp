@@ -1,45 +1,64 @@
 #include "stdafx.h"
-#include "ShaderData.h"
 
-ShaderData::ShaderData(GLuint shaderProg) : m_ShaderProgram(shaderProg) { }
+#include "ShaderData.h"
+#include "Uniform.h"
+
+#include <rttr/registration>
+
+
+//===================
+// Shader Data
+//===================
+
+
+// Construct destruct
+///////////////
+
+//---------------------------------
+// ShaderData::ShaderData
+//
+// Construct shader data from an OpenGl program pointer
+//
+ShaderData::ShaderData(GLuint shaderProg) 
+	: m_ShaderProgram(shaderProg) 
+{ }
+
+//---------------------------------
+// ShaderData::~ShaderData
+//
+// Shader data destructor
+//
 ShaderData::~ShaderData()
 {
 	for (auto &uni : m_Uniforms)
 	{
 		delete uni.second;
 	}
-	glDeleteProgram(m_ShaderProgram);
+	STATE->DeleteProgram(m_ShaderProgram);
 }
 
-void detail::UploadUniform(const Uniform<bool> &uniform)
+
+//===================
+// Shader Asset
+//===================
+
+
+// reflection
+RTTR_REGISTRATION
 {
-	glUniform1i(uniform.location, uniform.data);
+	using namespace rttr;
+
+	registration::class_<ShaderAsset>("shader asset");
 }
-void detail::UploadUniform(const Uniform<mat4> &uniform)
+
+
+//---------------------------------
+// ShaderAsset::Load
+//
+// Load shader data from a file
+//
+bool ShaderAsset::Load()
 {
-	glUniformMatrix4fv(uniform.location, 1, GL_FALSE, etm::valuePtr(uniform.data));
-}
-void detail::UploadUniform(const Uniform<mat3> &uniform)
-{
-	glUniformMatrix3fv(uniform.location, 1, GL_FALSE, etm::valuePtr(uniform.data));
-}
-void detail::UploadUniform(const Uniform<vec4> &uniform)
-{
-	glUniform4f(uniform.location, uniform.data.x, uniform.data.y, uniform.data.z, uniform.data.w);
-}
-void detail::UploadUniform(const Uniform<vec3> &uniform)
-{
-	glUniform3f(uniform.location, uniform.data.x, uniform.data.y, uniform.data.z);
-}
-void detail::UploadUniform(const Uniform<vec2> &uniform) 
-{ 
-	glUniform2f(uniform.location, uniform.data.x, uniform.data.y);
-}
-void detail::UploadUniform(const Uniform<float> &uniform)
-{
-	glUniform1f(uniform.location, uniform.data);
-}
-void detail::UploadUniform(const Uniform<int32> &uniform)
-{
-	glUniform1i(uniform.location, uniform.data);
+	// nothing yet
+	return false;
 }

@@ -2,7 +2,20 @@
   "asset database": {
     "caches": [
       {
-        "cache": []
+        "cache": [
+          {
+            "shader asset": {
+              "name": "OscillatorRenderer.glsl",
+              "path": "/com/leah-lindner/et_core/assets/"
+            }
+          },
+          {
+            "shader asset": {
+              "name": "SomeOtherShader.glsl",
+              "path": "/com/leah-lindner/et_core/assets/"
+            }
+          }
+        ]
       }
     ]
   }

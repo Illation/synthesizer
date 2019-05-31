@@ -451,7 +451,7 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 	JSON::Array const* const jArr = jVal->arr();
 
 	view.set_size(jArr->value.size());
-	const rttr::type arrayValueType = view.get_rank_type(1);
+	rttr::type const arrayValueType = view.get_rank_type(1);
 
 
 	bool success = true;
@@ -459,7 +459,16 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 	// Loop over array elements and fill them, depending on the internal type
 	for (size_t i = 0; i < jArr->value.size(); ++i)
 	{
-		JSON::Value const* const jIndexVal = jArr->value[i];
+		JSON::Value const* jIndexVal = jArr->value[i];
+		rttr::type localType = arrayValueType;
+
+		// pointers should be wrapped
+		if (!ExtractPointerValueType(localType, jIndexVal))
+		{
+			success = false;
+			continue;
+		}
+
 		if (jIndexVal->GetType() == JSON::JSON_Array) // multi dimensional array
 		{
 			auto subArrayView = view.get_value(i).create_sequential_view();
@@ -476,7 +485,13 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 			rttr::variant tempVar = view.get_value(i);
 			rttr::variant wrappedVar = tempVar.extract_wrapped_value();
 
-			FromJsonRecursive(wrappedVar, jIndexVal);
+			// for pointers we will have to create the type
+			if (localType != arrayValueType)
+			{
+				wrappedVar = localType.create({});
+			}
+
+			ObjectFromJsonRecursive(jIndexVal, wrappedVar, localType);
 
 			if (!wrappedVar.is_valid())
 			{
@@ -536,8 +551,15 @@ rttr::variant ExtractValue(JSON::Value const* const jVal, const rttr::type& valu
 			//use it
 			extractedVal = ctor.invoke();
 
+			JSON::Value const* localJVal = jVal;
+			rttr::type localType = valueType;
+			if (!ExtractPointerValueType(localType, localJVal))
+			{
+				return rttr::variant();
+			}
+
 			// fill the rest of our object
-			FromJsonRecursive(extractedVal, jVal);
+			ObjectFromJsonRecursive(localJVal, extractedVal, localType);
 		}
 	}
 
@@ -645,21 +667,150 @@ bool AssociativeViewFromJsonRecursive(rttr::variant_associative_view& view, JSON
 }
 
 //---------------------------------
-// FromJsonRecursive
+// FromJsonValue
 //
-// Recursively deserialize JSON values into an object (the instance)
+// Extract a JSON Value into a variant using its value type
 //
-void FromJsonRecursive(rttr::instance const inst, JSON::Value const* const jVal) // assumes jVal is a JSON::Object
+void FromJsonValue(JSON::Value const* jVal, rttr::type &valueType, rttr::variant &var)
+{
+	if (!ExtractPointerValueType(valueType, jVal))
+	{
+		return;
+	}
+
+	switch (jVal->GetType())
+	{
+
+		case JSON::JSON_Array:
+		{
+			if (valueType.is_sequential_container())
+			{
+				auto view = var.create_sequential_view();
+
+				if (!ArrayFromJsonRecursive(view, jVal))
+				{
+					LOG("FromJsonValue > There was an issue deserializing the sequential view, typeName: '"
+						+ valueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+				}
+			}
+			else if (valueType.is_associative_container())
+			{
+				auto associativeView = var.create_associative_view();
+
+				if (!AssociativeViewFromJsonRecursive(associativeView, jVal))
+				{
+					LOG("FromJsonValue > There was an issue deserializing the associate view, typeName: '"
+						+ valueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+				}
+			}
+			else
+			{
+				LOG("FromJsonValue > Found a JSON value of type array, but the property is not a sequential or associate container, typeName: '"
+					+ valueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+			}
+
+			break;
+		}
+		case JSON::JSON_Object:
+		{
+			ObjectFromJsonRecursive(jVal, var, valueType);
+
+			if (!var.is_valid())
+			{
+				LOG("FromJsonValue > Failed to create a valid object from property, typeName: '"
+					+ valueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+			}
+
+			break;
+		}
+		default:
+		{
+			rttr::type const& vType = valueType;
+
+			var = ExtractBasicTypes(jVal); // extract the basic type to a variant
+			if (!(var.convert(vType))) // then try to convert it to the type of our property
+			{
+				LOG("FromJsonValue > Failed to convert basic type extracted from JSON to property value type, typeName: '"
+					+ valueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+			}
+		}
+
+	}
+}
+
+//---------------------------------
+// ExtractPointerValueType
+//
+// Pointer objects are wrapped so that they can indicate their underlying inherited type
+//
+bool ExtractPointerValueType(rttr::type &inOutValType, JSON::Value const* &inOutJVal)
+{
+	if (inOutValType.is_pointer())
+	{
+		if (inOutJVal->GetType() != JSON::JSON_Object)
+		{
+			LOG("ExtractPointerValueType > Expected JSON::Value to be of type object!", LogLevel::Warning);
+			return false;
+		}
+		JSON::Object const* const jObj = inOutJVal->obj();
+
+		if (jObj->value.size() != 1u)
+		{
+			LOG("ExtractPointerValueType > Expected pointer JSON object to have exactly one internal value!", LogLevel::Warning);
+			return false;
+		}
+
+		// figure out what kind of object we are deserializing
+		std::string internalTypeName = jObj->value[0].first;
+
+		inOutValType = inOutValType.get_raw_type();
+
+		if (inOutValType.get_name().to_string() != internalTypeName)// if it's not a pointer to the base type, check the derived types 
+		{
+			// get all derived types
+			rttr::array_range<rttr::type> derivedTypes = inOutValType.get_derived_classes();
+
+			// try finding our internal type in that list
+			auto foundTypeIt = std::find_if(derivedTypes.begin(), derivedTypes.end(), [&internalTypeName](rttr::type const& el)
+			{
+				return el.get_name().to_string() == internalTypeName;
+			});
+
+			if (foundTypeIt == derivedTypes.cend())
+			{
+				LOG("ExtractPointerValueType > Pointers internal type doesn't derive from class type!", LogLevel::Warning);
+				return false;
+			}
+
+			inOutValType = *foundTypeIt;
+		}
+
+		inOutJVal = jObj->value[0].second;
+	}
+	//else
+	//{
+	//	inOutValType = inOutValType.get_derived_type();
+	//}
+
+	return true;
+}
+
+//---------------------------------
+// ObjectFromJsonRecursive
+//
+// Recursively deserialize JSON values into an object or pointer(the instance) with a known type
+//
+void ObjectFromJsonRecursive(JSON::Value const* const jVal, rttr::instance const &inst, rttr::type &instType)
 {
 	if (jVal->GetType() != JSON::JSON_Object)
 	{
-		LOG("FromJsonRecursive > Expected JSON::Value to be of type object!", LogLevel::Warning);
+		LOG("ObjectFromJsonRecursive > Expected JSON::Value to be of type object!", LogLevel::Warning);
 		return;
 	}
 	JSON::Object const* const jObj = jVal->obj();
 
 	rttr::instance instObject = inst.get_type().get_raw_type().is_wrapper() ? inst.get_wrapped_instance() : inst;
-	rttr::array_range<rttr::property> const prop_list = instObject.get_derived_type().get_properties();
+	rttr::array_range<rttr::property> const prop_list = instType.get_properties();
 
 	for (auto prop : prop_list)
 	{
@@ -676,74 +827,34 @@ void FromJsonRecursive(rttr::instance const inst, JSON::Value const* const jVal)
 			continue;
 		}
 
-		const rttr::type propValType = prop.get_type();
+		rttr::type propValType = prop.get_type();
+		rttr::variant var = prop.get_value(instObject);
+		JSON::Value const* propJVal = jChildIt->second;
 
-		JSON::Value const* const propJVal = jChildIt->second;
-		switch (propJVal->GetType())
+		FromJsonValue(propJVal, propValType, var);
+
+		if (var.is_valid())
 		{
-			case JSON::JSON_Array:
-			{
-				rttr::variant var;
-				if (propValType.is_sequential_container())
-				{
-					var = prop.get_value(instObject);
-					auto view = var.create_sequential_view();
-
-					if (!ArrayFromJsonRecursive(view, propJVal))
-					{
-						LOG("FromJsonRecursive > There was an issue deserializing the sequential view, name: '"
-							+ propName + std::string("' typeName: '") + propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
-					}
-				}
-				else if (propValType.is_associative_container())
-				{
-					var = prop.get_value(instObject);
-					auto associativeView = var.create_associative_view();
-
-					if (!AssociativeViewFromJsonRecursive(associativeView, propJVal))
-					{
-						LOG("FromJsonRecursive > There was an issue deserializing the associate view, name: '"
-							+ propName + std::string("' typeName: '") + propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
-					}
-				}
-				else
-				{
-					LOG("FromJsonRecursive > Found a JSON value of type array, but the property is not a sequential or associate container, name: '"
-						+ propName + std::string("' typeName: '") + propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
-				}
-
-				prop.set_value(instObject, var);
-				break;
-			}
-			case JSON::JSON_Object:
-			{
-				rttr::variant var = prop.get_value(instObject);
-				FromJsonRecursive(var, propJVal);
-
-				if (!var.is_valid())
-				{
-					LOG("FromJsonRecursive > Failed to create a valid object from property, name: '"
-						+ propName + std::string("' typeName: '") + propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
-				}
-
-				prop.set_value(instObject, var);
-				break;
-			}
-			default:
-			{
-				rttr::variant extractedVal = ExtractBasicTypes(propJVal); // extract the basic type to a variant
-				if (extractedVal.convert(propValType)) // then try to convert it to the type of our property
-				{
-					prop.set_value(instObject, extractedVal);
-				}
-				else
-				{
-					LOG("FromJsonRecursive > Failed to convert basic type extracted from JSON to property value type, property: '"
-						+ propName + std::string("' typeName: '") + propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
-				}
-			}
+			prop.set_value(instObject, var);
+		}
+		else
+		{
+			LOG("ObjectFromJsonRecursive > extracted variant was invalid, property: '" + propName + std::string("' typeName: '") +
+				propValType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
 		}
 	}
+}
+
+//---------------------------------
+// FromJsonRecursive
+//
+// Recursively deserialize JSON values into an object or pointer(the instance)
+//
+void FromJsonRecursive(rttr::instance const inst, JSON::Value const* const jVal) // assumes jVal is a JSON::Object
+{
+	rttr::type instType = inst.get_type().get_raw_type().is_wrapper() ? inst.get_wrapped_instance().get_derived_type() : inst.get_derived_type();
+
+	ObjectFromJsonRecursive(jVal, inst, instType);
 }
 
 } // namespace serialization

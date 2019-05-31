@@ -188,6 +188,7 @@ project "General"
 	files { 
 		path.join(PROJECT_DIR, "resources/**.ui"), 
 		path.join(PROJECT_DIR, "resources/**.json"), 
+		path.join(PROJECT_DIR, "resources/**.glsl"), 
 		path.join(PROJECT_DIR, "resources/**.gresource.xml"), 
 		path.join(PROJECT_DIR, "resources/**.gschema.xml"), 
 		path.join(PROJECT_DIR, "build/*.bat"), 

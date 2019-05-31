@@ -4,7 +4,11 @@
 
 #include <epoxy/gl.h>
 
+
+// forward declarations
 struct OscillatorParameters;
+class ShaderData;
+
 
 //---------------------------------
 // OscillatorRenderer
@@ -67,6 +71,8 @@ private:
 	std::vector<LineMetaData> m_MetaData;
 
 	GLuint m_ShaderProgram;
+
+	ShaderData* m_Shader = nullptr;
 
 	GLint m_uWVP = 0;
 };
