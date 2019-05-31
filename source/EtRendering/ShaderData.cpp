@@ -4,6 +4,7 @@
 #include "Uniform.h"
 
 #include <rttr/registration>
+#include <rttr/policy.h>
 
 
 //===================
@@ -48,7 +49,12 @@ RTTR_REGISTRATION
 {
 	using namespace rttr;
 
-	registration::class_<ShaderAsset>("shader asset");
+	registration::class_<ShaderAsset>("shader asset")
+		.constructor<>()
+		(
+			//policy::ctor::as_raw_ptr
+		)
+		;
 }
 
 

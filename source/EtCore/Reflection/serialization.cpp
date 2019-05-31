@@ -475,7 +475,7 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 			if (!ArrayFromJsonRecursive(subArrayView, jIndexVal))
 			{
 				LOG("ArrayFromJsonRecursive > There was an issue deserializing the inner array, index: #" + std::to_string(i)
-					+ std::string(" typeName: '") + arrayValueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+					+ std::string(" typeName: '") + localType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
 
 				success = false;
 			}
@@ -488,7 +488,30 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 			// for pointers we will have to create the type
 			if (localType != arrayValueType)
 			{
-				wrappedVar = localType.create({});
+				// find the right constructor for our type
+				rttr::constructor ctor = localType.get_constructor();
+				for (auto& item : localType.get_constructors())
+				{
+					if (item.get_instantiated_type() == localType && item.get_parameter_infos().empty())
+					{
+						ctor = item;
+					}
+				}
+
+				//use it
+				if (ctor.is_valid())
+				{
+					tempVar = ctor.invoke();
+					wrappedVar = tempVar.extract_wrapped_value();
+				}
+				else
+				{
+					LOG("ArrayFromJsonRecursive > Failed to get a valid constructor from property, index: #" + std::to_string(i)
+						+ std::string(" typeName: '") + localType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+
+					success = false;
+					continue;
+				}
 			}
 
 			ObjectFromJsonRecursive(jIndexVal, wrappedVar, localType);
@@ -496,7 +519,7 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 			if (!wrappedVar.is_valid())
 			{
 				LOG("ArrayFromJsonRecursive > Failed to create a valid object from property, index: #" + std::to_string(i)
-					+ std::string(" typeName: '") + arrayValueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+					+ std::string(" typeName: '") + localType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
 
 				success = false;
 			}
@@ -505,15 +528,16 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 		}
 		else // array of basic types
 		{
+			rttr::type const& localTypeCRef = localType;
 			rttr::variant extractedVal = ExtractBasicTypes(jIndexVal);
-			if (extractedVal.convert(arrayValueType))
+			if (extractedVal.convert(localTypeCRef))
 			{
 				view.set_value(i, extractedVal);
 			}
 			else
 			{
 				LOG("ArrayFromJsonRecursive > Failed to convert basic type extracted from JSON to property value type, index: #" + std::to_string(i)
-					 + std::string(" typeName: '") + arrayValueType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
+					 + std::string(" typeName: '") + localTypeCRef.get_name().to_string() + std::string("'!"), LogLevel::Warning);
 
 				success = false;
 			}
