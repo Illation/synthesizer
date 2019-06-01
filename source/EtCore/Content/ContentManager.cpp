@@ -71,5 +71,13 @@ void ContentManager::Init()
 //
 void ContentManager::Deinit()
 {
+	for (AssetDatabase::AssetCache& cache : m_Database.caches)
+	{
+		for (I_Asset* asset : cache.cache)
+		{
+			delete asset;
+			asset = nullptr;
+		}
+	}
 	m_Database.caches.clear();
 }

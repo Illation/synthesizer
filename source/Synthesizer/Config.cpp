@@ -16,11 +16,7 @@ RTTR_REGISTRATION
 
 	registration::class_<Config::Settings::Output>("output")
 		.constructor<>()
-		(
-		)
 		.method("DeriveSettings", &Config::Settings::Output::DeriveSettings)
-		(
-		)
 		.property("sample rate", &Config::Settings::Output::SampleRate)
 		.property("channels", &Config::Settings::Output::Channels)
 		.property("frames per buffer", &Config::Settings::Output::FramesPerBuffer)

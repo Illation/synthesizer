@@ -5,6 +5,7 @@
 
 #include <rttr/registration>
 #include <rttr/policy.h>
+#include <rttr/detail/policies/ctor_policies.h>
 
 
 //===================
@@ -50,11 +51,13 @@ RTTR_REGISTRATION
 	using namespace rttr;
 
 	registration::class_<ShaderAsset>("shader asset")
-		.constructor<>()
-		(
-			//policy::ctor::as_raw_ptr
-		)
-		;
+		.constructor<ShaderAsset const&>()
+		.constructor<>()( rttr::detail::as_object() );
+	rttr::type::register_converter_func( [](ShaderAsset& shader, bool& ok) -> I_Asset*
+	{
+		ok = true;
+		return new ShaderAsset(shader);
+	});
 }
 
 

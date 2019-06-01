@@ -16,6 +16,7 @@ public:
 	// Construct destruct
 	//---------------------
 	I_Asset() = default;
+	I_Asset(const I_Asset&) = default;
 	virtual ~I_Asset();
 
 	// Interface

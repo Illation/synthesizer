@@ -490,19 +490,11 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 			{
 				// find the right constructor for our type
 				rttr::constructor ctor = localType.get_constructor();
-				for (auto& item : localType.get_constructors())
-				{
-					if (item.get_instantiated_type() == localType && item.get_parameter_infos().empty())
-					{
-						ctor = item;
-					}
-				}
 
 				//use it
 				if (ctor.is_valid())
 				{
-					tempVar = ctor.invoke();
-					wrappedVar = tempVar.extract_wrapped_value();
+					wrappedVar = ctor.invoke();
 				}
 				else
 				{
@@ -522,6 +514,11 @@ bool ArrayFromJsonRecursive(rttr::variant_sequential_view& view, JSON::Value con
 					+ std::string(" typeName: '") + localType.get_name().to_string() + std::string("'!"), LogLevel::Warning);
 
 				success = false;
+			}
+
+			if (localType != arrayValueType)
+			{
+				wrappedVar.convert(arrayValueType);
 			}
 
 			view.set_value(i, wrappedVar);
