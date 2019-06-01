@@ -1,11 +1,11 @@
 #pragma once
 #include <EtCore/Helper/Singleton.h>
 
+#include <EtCore/Helper/Hash.h>
+
+#include "Asset.h"
+
 #include <rttr/type>
-
-
-// forward declarations
-class I_Asset;
 
 
 //---------------------------------
@@ -65,9 +65,19 @@ public:
 	void Init();
 	void Deinit();
 
+	I_Asset* GetAsset(T_Hash const assetId, std::type_info const& type);
+
+	template <class T>
+	Asset<T>* GetAsset(T_Hash const assetId);
+
+	template <class T>
+	T const* GetAssetData(T_Hash const assetId);
+
 private:
 	// Data
 	///////
 
 	AssetDatabase m_Database;
 };
+
+#include "ContentManager.inl"

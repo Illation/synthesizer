@@ -31,8 +31,6 @@ private:
 	void UpdateBuffer();
 	void DrawLine(vec3 start, vec4 startCol, vec3 end, vec4 endCol);
 	void CheckMetaData(float thickness);
-	void InitShader();
-	GLuint CompileShader(std::string const& shaderSourceStr, GLenum type);
 
 	void DrawOscillatorLines();
 
@@ -70,9 +68,5 @@ private:
 	//Metadata
 	std::vector<LineMetaData> m_MetaData;
 
-	GLuint m_ShaderProgram;
-
-	ShaderData* m_Shader = nullptr;
-
-	GLint m_uWVP = 0;
+	ShaderData const* m_Shader = nullptr;
 };

@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "SynthApp.h"
 
+#include "linkerHelper.h"
+
 #include <glibmm/refptr.h>
 #include <glibmm/miscutils.h>
 
 #include <UI/_generated/resources.c>
+
 
 void SetDebuggingOptions();
 

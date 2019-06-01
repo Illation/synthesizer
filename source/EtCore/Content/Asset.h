@@ -23,7 +23,7 @@ public:
 	//---------------------
 	virtual std::type_info const& GetType() const = 0;
 	virtual bool IsLoaded() const = 0;
-	virtual bool Load() = 0;
+	virtual bool LoadFromMemory(std::vector<uint8> const& data) = 0;
 	virtual void Unload() {}
 
 	// Utility
@@ -36,7 +36,9 @@ public:
 
 	T_Hash GetId() const { return m_Id; }
 
-private:
+	void Load();
+
+protected:
 	// Data
 	///////
 
@@ -66,7 +68,7 @@ public:
 
 	// Interface
 	//---------------------
-	virtual bool Load() { return false; }
+	virtual bool LoadFromMemory(std::vector<uint8> const& data) { UNUSED(data); return false; }
 
 	// Utility
 	//---------------------
@@ -74,7 +76,9 @@ public:
 	bool IsLoaded() const override { return m_Data != nullptr; }
 	void Unload() override;
 
-private:
+	T const* GetData() const { return m_Data; }
+
+protected:
 	// Data
 	///////
 

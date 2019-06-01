@@ -2,7 +2,7 @@
 
 #include "RenderState.h"
 
-#include "ShaderData.h"
+#include "Shader.h"
 
 
 //===================
@@ -238,7 +238,7 @@ void RenderState::SetClearColor(vec4 col)
 //
 // Set the shader we draw with
 //
-void RenderState::SetShader(ShaderData* pShader)
+void RenderState::SetShader(ShaderData const* pShader)
 {
 	if (!(m_pBoundShader == pShader))
 	{
@@ -639,4 +639,24 @@ void RenderState::GetShaderIV(GLuint shader, GLenum pname, GLint *params) const
 void RenderState::GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) const
 {
 	glGetShaderInfoLog(shader, maxLength, length, infoLog);
+}
+
+//---------------------------------
+// RenderState::GetProgramIV
+//
+// Get an integer value from a program
+//
+void RenderState::GetProgramIV(GLuint program, GLenum pname, GLint *params) const
+{
+	glGetProgramiv(program, pname, params);
+}
+
+//---------------------------------
+// RenderState::GetProgramIV
+//
+// Get information about a uniform in a program at a given index
+//
+void RenderState::GetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name) const
+{
+	glGetActiveUniform(program, index, bufSize, length, size, type, name);
 }

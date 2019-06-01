@@ -2,7 +2,8 @@
 #include "OscillatorRenderer.h"
 
 #include <Synth/Oscillator.h>
-#include <EtRendering/ShaderData.h>
+#include <EtRendering/Shader.h>
+#include <EtCore/Content/ContentManager.h>
 
 
 
@@ -22,10 +23,7 @@ OscillatorRenderer::OscillatorRenderer(OscillatorParameters const& osc)
 //
 void OscillatorRenderer::OnInit()
 {
-	InitShader();
-
-	ShaderAsset asset;
-	asset.Load();
+	m_Shader = ContentManager::GetInstance()->GetAssetData<ShaderData>("OscillatorRenderer.glsl"_hash);
 
 	//Generate buffers and arrays
 	STATE->GenerateVertexArrays(1, &m_Vao);
@@ -98,7 +96,7 @@ void OscillatorRenderer::OnRender()
 	STATE->SetClearColor(vec4(0.01f, 0.02f, 0.1f, 1.f));
 	STATE->Clear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(m_ShaderProgram);
+	STATE->SetShader(m_Shader);
 
 	UpdateBuffer();
 
@@ -173,92 +171,6 @@ void OscillatorRenderer::CheckMetaData(float thickness)
 
 	// add to the size because we drew a new line
 	m_MetaData[m_MetaData.size() - 1].size += sizeof(LineVertex) * 2;
-}
-
-//---------------------------------
-// OscillatorRenderer::InitShader 
-//
-// Initialize the shader that draws the lines
-//
-void OscillatorRenderer::InitShader()
-{
-	std::string vertexShaderString =
-		"#version 330 core\n"
-		"layout (location = 0) in vec3 pos;\n"
-		"layout (location = 1) in vec4 color;\n"
-		"out vec4 Color;\n"
-		"void main()\n"
-		"{\n"
-		"	Color = color;\n"
-		"	gl_Position = vec4(pos, 1.0);\n"
-		"}\n"
-		;
-	GLuint vertexShader = CompileShader(vertexShaderString, GL_VERTEX_SHADER);
-
-	std::string fragmentShaderString =
-		"#version 330 core\n"
-		"in vec4 Color;\n"
-		"out vec4 outColor;\n"
-		"void main()\n"
-		"{\n"
-		"	outColor = Color;\n"
-		"}\n"
-		;
-	GLuint fragmentShader = CompileShader(fragmentShaderString, GL_FRAGMENT_SHADER);
-
-
-	//Combine Shaders
-	m_ShaderProgram = STATE->CreateProgram();
-	STATE->AttachShader(m_ShaderProgram, vertexShader);
-	STATE->AttachShader(m_ShaderProgram, fragmentShader);
-	STATE->BindFragmentDataLocation(m_ShaderProgram, 0, "outColor");
-
-	STATE->LinkProgram(m_ShaderProgram);
-
-	STATE->DeleteShader(vertexShader);
-	STATE->DeleteShader(fragmentShader);
-}
-
-//---------------------------------
-// OscillatorRenderer::CompileShader 
-//
-// Compile a glsl shader
-//
-GLuint OscillatorRenderer::CompileShader(std::string const& shaderSourceStr, GLenum type)
-{
-	const char *shaderSource = shaderSourceStr.c_str();
-	GLuint shader = STATE->CreateShader(type);
-	STATE->SetShaderSource(shader, 1, &shaderSource, nullptr);
-
-	//error handling
-	GLint status;
-	STATE->CompileShader(shader);
-	STATE->GetShaderIV(shader, GL_COMPILE_STATUS, &status);
-	if (!(status == GL_TRUE))
-	{
-		char buffer[512];
-		STATE->GetShaderInfoLog(shader, 512, NULL, buffer);
-		std::string sName;
-		switch (type)
-		{
-		case GL_VERTEX_SHADER:
-			sName = "vertex";
-			break;
-		case GL_GEOMETRY_SHADER:
-			sName = "geometry";
-			break;
-		case GL_FRAGMENT_SHADER:
-			sName = "fragment";
-			break;
-		default:
-			sName = "invalid type";
-			break;
-		}
-		LOG(std::string("OscillatorRenderer::CompileShader > Compiling ") + sName + " shader failed", Warning);
-		LOG(buffer, Warning);
-	}
-
-	return shader;
 }
 
 //---------------------------------

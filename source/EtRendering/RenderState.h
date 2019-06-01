@@ -41,7 +41,7 @@ public:
 
 	void SetClearColor(vec4 col);
 
-	void SetShader(ShaderData* pShader);
+	void SetShader(ShaderData const* pShader);
 
 	void BindFramebuffer(GLuint handle);
 	void BindReadFramebuffer(GLuint handle);
@@ -98,6 +98,9 @@ public:
 	void GetShaderIV(GLuint shader, GLenum pname, GLint *params) const;
 	void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) const;
 
+	void GetProgramIV(GLuint program, GLenum pname, GLint *params) const;
+	void GetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name) const;
+
 private:
 
 	void EnOrDisAble(bool &state, bool enabled, GLenum glState);
@@ -131,7 +134,7 @@ private:
 
 	vec4 m_ClearColor = vec4(0);
 
-	ShaderData* m_pBoundShader = nullptr;
+	ShaderData const* m_pBoundShader = nullptr;
 
 	uint32 m_ActiveTexture = 0;
 	int32 m_NumTextureUnits; //depends on gpu and drivers

@@ -4,6 +4,7 @@
 #include <rttr/type>
 
 #include <EtCore/Content/Asset.h>
+#include <EtCore/Helper/LinkerUtils.h>
 
 
 // forward declarations
@@ -22,9 +23,7 @@ public:
 	ShaderData(GLuint shaderProg);
 	~ShaderData();
 
-	GLuint GetProgram() { return m_ShaderProgram; }
-
-	std::string GetName() { return m_Name; }
+	GLuint const GetProgram() const { return m_ShaderProgram; }
 
 	template<typename T>
 	bool Upload(uint32 uniform, const T &data)const;
@@ -32,8 +31,6 @@ private:
 	friend class ShaderAsset;
 
 	GLuint m_ShaderProgram;
-
-	std::string m_Name;
 
 	std::map<uint32, I_Uniform*> m_Uniforms;
 };
@@ -45,6 +42,7 @@ private:
 //
 class ShaderAsset final : public Asset<ShaderData>
 {
+	DECLARE_FORCED_LINKING()
 public:
 	// Construct destruct
 	//---------------------
@@ -53,10 +51,19 @@ public:
 
 	// Asset overrides
 	//---------------------
-	bool Load() override;
+	bool LoadFromMemory(std::vector<uint8> const& data) override;
+
+	// Utility
+	//---------------------
+private:
+	GLuint CompileShader(const std::string &shaderSourceStr, GLenum type);
+
+	bool Precompile(std::string &shaderContent, bool &useGeo, bool &useFrag, std::string &vertSource, std::string &geoSource, std::string &fragSource);
+
+	bool GetUniformLocations(GLuint shaderProgram, std::map<uint32, I_Uniform*> &uniforms);
 
 	RTTR_ENABLE(Asset<ShaderData>)
 };
 
 
-#include "ShaderData.inl"
+#include "Shader.inl"

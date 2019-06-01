@@ -81,3 +81,37 @@ void ContentManager::Deinit()
 	}
 	m_Database.caches.clear();
 }
+
+//---------------------------------
+// ContentManager::GetAsset
+//
+// Get an asset by its ID and type
+//
+I_Asset* ContentManager::GetAsset(T_Hash const assetId, std::type_info const& type)
+{
+	// Try finding a cache containing our type
+	auto foundCacheIt = std::find_if(m_Database.caches.begin(), m_Database.caches.end(), [&type](AssetDatabase::AssetCache& cache)
+	{
+		return cache.GetType() == type;
+	});
+
+	if (foundCacheIt == m_Database.caches.cend())
+	{
+		LOG("ContentManager::GetAsset > Couldn't find asset cache of type '" + std::string(type.name()) + std::string("'!"), LogLevel::Warning);
+		return nullptr;
+	}
+
+	// try finding our asset by its ID in the cache
+	auto foundAssetIt = std::find_if(foundCacheIt->cache.begin(), foundCacheIt->cache.end(), [assetId](I_Asset* asset)
+	{
+		return asset->GetId() == assetId;
+	});
+
+	if (foundAssetIt == foundCacheIt->cache.cend())
+	{
+		LOG("ContentManager::GetAsset > Couldn't find asset with ID '" + std::to_string(assetId) + std::string("'!"), LogLevel::Warning);
+		return nullptr;
+	}
+
+	return *foundAssetIt;
+}
