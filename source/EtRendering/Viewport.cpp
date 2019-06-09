@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Viewport.h"
 
-#include "Renderer.h"
+#include "ViewportRenderer.h"
 #include "RenderState.h"
 
 #include <epoxy/gl.h>
@@ -63,7 +63,7 @@ void Viewport::Redraw()
 //
 // Set the renderer, takes ownership of it
 //
-void Viewport::SetRenderer(I_Renderer* renderer)
+void Viewport::SetRenderer(I_ViewportRenderer* renderer)
 {
 	m_Renderer = renderer;
 

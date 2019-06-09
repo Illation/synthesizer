@@ -5,7 +5,7 @@
 
 #include <gtkmm/glarea.h>
 
-class I_Renderer;
+class I_ViewportRenderer;
 
 
 //---------------------------------
@@ -22,7 +22,7 @@ public:
 
 	void Redraw();
 
-	void SetRenderer(I_Renderer* renderer); // takes ownership
+	void SetRenderer(I_ViewportRenderer* renderer); // takes ownership
 
 	RenderState* GetState() { return m_RenderState; }
 
@@ -50,7 +50,7 @@ private:
 
 	Gtk::GLArea* m_GLArea = nullptr;
 
-	I_Renderer* m_Renderer = nullptr;
+	I_ViewportRenderer* m_Renderer = nullptr;
 	RenderState* m_RenderState = nullptr; // since a viewport has it's own open gl context, each viewport has it's own render state
 
 	ivec2 m_Dimensions;

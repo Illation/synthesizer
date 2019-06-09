@@ -2,16 +2,16 @@
 
 
 //---------------------------------
-// I_Renderer
+// I_ViewportRenderer
 //
 // Interface for a class that can draw anything to a viewport - a scene, a UI element etc ....
 //
-class I_Renderer
+class I_ViewportRenderer
 {
 public:
-	I_Renderer() = default;
-	virtual ~I_Renderer() = default;
-	I_Renderer& operator=(const I_Renderer&) { return *this; }
+	I_ViewportRenderer() = default;
+	virtual ~I_ViewportRenderer() = default;
+	I_ViewportRenderer& operator=(const I_ViewportRenderer&) { return *this; }
 
 	virtual void OnInit() {}
 	virtual void OnDeinit() {}

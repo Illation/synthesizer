@@ -27,13 +27,15 @@ public:
 	void SetSynthApp(SynthApp *const synthApp);
 
 private:
+
+	std::unique_ptr<Viewport> CreateViewport(std::string const& name);
+
 	// Data
 	/////////
 
 	Glib::RefPtr<Gtk::Builder> m_RefBuilder;
 	Glib::RefPtr<Gio::Settings> m_Settings;
-	Gtk::Stack* m_Stack;
 	SynthApp* m_SynthApp;
 
-	std::unique_ptr<Viewport> m_Viewport;
+	std::vector<std::unique_ptr<Viewport>> m_OscillatorViewports;
 };

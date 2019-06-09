@@ -11,6 +11,7 @@
 #include <gtkmm/object.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>
+#include <gtkmm/settings.h>
 
 //====================
 // Synth Application Window
@@ -25,24 +26,8 @@ SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builde
 	: Gtk::ApplicationWindow(cobject)
 	, m_RefBuilder(refBuilder)
 	, m_Settings()
-	, m_Stack(nullptr)
 {
-	m_RefBuilder->get_widget("stack", m_Stack);
-	if (!m_Stack)
-	{
-		throw std::runtime_error("No 'stack' object in window.ui");
-	}
-
 	m_Settings = Gio::Settings::create("com.leah-lindner.synthesizer");
-	m_Settings->bind("transition", m_Stack->property_transition_type());
-
-	Gtk::GLArea* glArea;
-	m_RefBuilder->get_widget("glArea", glArea);
-	if (!glArea)
-	{
-		LOG("SynthAppWindow::SynthAppWindow > No 'glArea' object in window.ui!", LogLevel::Error);
-	}
-	m_Viewport = std::make_unique<Viewport>(glArea);
 
 	// listen for keyboard input
 	// on press
@@ -63,6 +48,17 @@ SynthAppWindow::SynthAppWindow(BaseObjectType* cobject, Glib::RefPtr<Gtk::Builde
 
 	//show all the widgets
 	show_all_children();
+
+	// Display the application menu in the application, not in the desktop environment.
+	Glib::RefPtr<Gtk::Settings> gtk_settings = Gtk::Settings::get_default();
+	if (gtk_settings)
+	{
+		gtk_settings->property_gtk_shell_shows_app_menu() = false;
+	}
+	set_show_menubar(true);
+
+	// Set the window icon.
+	set_icon(Gdk::Pixbuf::create_from_resource("/com/leah-lindner/synthesizer/ui/icons/menu.png"));
 }
 
 //static
@@ -98,14 +94,44 @@ void SynthAppWindow::SetSynthApp(SynthApp *const synthApp)
 {
 	m_SynthApp = synthApp;
 
+	// Create a visualizer for every oscillator
 	SynthParameters const& params = m_SynthApp->GetSynthesizer()->GetParameters();
 
-	if (params.oscillators.size() > 0)
+	for (size_t oscIdx = 0; oscIdx < params.oscillators.size(); ++oscIdx)
 	{
-		m_Viewport->SetRenderer(new OscillatorRenderer(params.oscillators[0]));
+		// Create a viewport in the stack
+		std::string oscName = "Oscillator " + std::to_string(oscIdx + 1);
+		std::unique_ptr<Viewport> viewport = std::move(CreateViewport(oscName));
+
+		// Set the viewports renderer to the oscillator
+		viewport->SetRenderer(new OscillatorRenderer(params.oscillators[oscIdx]));
+
+		// manage the pointer to the viewport
+		m_OscillatorViewports.emplace_back(std::move(viewport));
 	}
-	else
+}
+
+//---------------------------------
+// SynthAppWindow::CreateViewport
+//
+// Create a viewport with an openGL area in it
+//
+std::unique_ptr<Viewport> SynthAppWindow::CreateViewport(std::string const& name)
+{
+	// get the stack
+	Gtk::Stack* oscStack;
+	m_RefBuilder->get_widget("stack", oscStack);
+	if (!oscStack)
 	{
-		LOG("SynthAppWindow::SetSynthApp > couldn't create a renderer for an oscillator because there are none!", LogLevel::Warning);
+		LOG("SynthAppWindow::CreateViewport > No 'stack' object in window.ui!", LogLevel::Error);
 	}
+
+	// add a GL area to the stack
+	Gtk::GLArea* glArea = Gtk::make_managed<Gtk::GLArea>();
+	glArea->set_auto_render(true);
+	glArea->show();
+	oscStack->add(*glArea, name, name);
+
+	// create a viewport from the area
+	return std::make_unique<Viewport>(glArea);
 }

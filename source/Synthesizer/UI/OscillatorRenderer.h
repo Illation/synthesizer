@@ -1,6 +1,6 @@
 #pragma once
 
-#include <EtRendering/Renderer.h>
+#include <EtRendering/ViewportRenderer.h>
 
 #include <epoxy/gl.h>
 
@@ -15,7 +15,7 @@ class ShaderData;
 //
 // Renders an oscillator
 //
-class OscillatorRenderer : public I_Renderer
+class OscillatorRenderer : public I_ViewportRenderer
 {
 public:
 	OscillatorRenderer(OscillatorParameters const& osc);
