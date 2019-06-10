@@ -45,6 +45,17 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 	: m_Frequency(static_cast<double>(frequency))
 	, m_Parameters(params)
 {
+	// Create a wave table with all basic patterns
+	WaveTable* wavePattern = new WaveTable();
+
+	wavePattern->AddTableFromBasePattern<SinePattern>(0.f);
+	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.33f);
+	wavePattern->AddTableFromBasePattern<SquarePattern>(0.67f);
+	wavePattern->AddTableFromBasePattern<SawPattern>(1.f);
+
+	m_Pattern = std::unique_ptr<I_WavePattern>(static_cast<I_WavePattern*>(wavePattern));
+
+	// set the current morph of the table to the preferred pattern
 	SetPattern(params.patternType);
 }
 
@@ -56,24 +67,22 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 void Oscillator::SetPattern(E_PatternType const patternType)
 {
 	// set the pattern
-	I_WavePattern* wavePattern = nullptr;
+	float morph = 0.f;
+
 	switch (patternType)
 	{
-	case E_PatternType::Sine:
-		wavePattern = new SinePattern();
-		break;
 	case E_PatternType::Saw:
-		wavePattern = new SawPattern();
+		morph = 0.33f;
 		break;
 	case E_PatternType::Square:
-		wavePattern = new SquarePattern();
+		morph = 0.67f;
 		break;
 	case E_PatternType::Triangle:
-		wavePattern = new TrianglePattern();
+		morph = 1.f;
 		break;
 	}
 
-	m_Pattern = std::unique_ptr<I_WavePattern>(wavePattern);
+	static_cast<WaveTable*>(m_Pattern.get())->SetMorph(morph);
 }
 
 //---------------------------------
