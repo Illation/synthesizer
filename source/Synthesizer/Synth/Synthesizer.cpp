@@ -116,10 +116,10 @@ void Synthesizer::Initialize()
 	m_SynthParameters.oscBalance = 0.f;
 
 	OscillatorParameters osc;
-	osc.patternType = E_PatternType::Saw;
+	//osc.patternType = E_PatternType::Saw;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
-	osc.patternType = E_PatternType::Triangle;
+	//osc.patternType = E_PatternType::Triangle;
 	m_SynthParameters.oscillators.emplace_back(osc);
 
 	SetOscillatorBalance();
@@ -372,27 +372,11 @@ void Synthesizer::SetOscillatorMode(uint8 const oscIdx, float const value)
 		return;
 	}
 
-	// figure out the pattern we want based on the value
-	uint8 patternIndex = static_cast<uint8>(value * static_cast<float>(E_PatternType::COUNT));
-	if (patternIndex == static_cast<uint8>(E_PatternType::COUNT)) // this can happen if value == 1.f
+	m_SynthParameters.oscillators[oscIdx].morph = value;
+	// set the oscillators for every voice to the new type
+	for (T_KeyVoicePair& keyVoice : m_Voices)
 	{
-		patternIndex--;
-	}
-	E_PatternType newPattern = static_cast<E_PatternType>(patternIndex);
-
-	// check that we are not already of that pattern type
-	if (m_SynthParameters.oscillators[oscIdx].patternType != newPattern)
-	{
-		m_SynthParameters.oscillators[oscIdx].patternType = newPattern;
-
-		// set the oscillators for every voice to the new type
-		for (T_KeyVoicePair& keyVoice : m_Voices)
-		{
-			keyVoice.second.GetOscillator(oscIdx).SetPattern(newPattern);
-		}
-
-		// log the new type
-		LOG("Synthesizer::SetOscillatorMode > Oscillator #" + std::to_string(oscIdx) + std::string(" set to: ") + GetPatternName(newPattern));
+		keyVoice.second.GetOscillator(oscIdx).SetMorph(value);
 	}
 }
 

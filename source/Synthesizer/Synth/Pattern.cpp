@@ -86,20 +86,32 @@ float WaveTable::GetSignal(float const phase) const
 
 	// otherwise blend between two
 
-	auto firstTableIt = std::find_if(m_Tables.cbegin(), m_Tables.cend(), [phase](T_MorphTable const& morphTable)
+	auto secondTableIt = std::find_if(m_Tables.cbegin(), m_Tables.cend(), [this](T_MorphTable const& morphTable)
 	{
-		return morphTable.first >= phase;
+		return morphTable.first >= m_Morph;
 	});
 
+	if (secondTableIt == m_Tables.cend())
+	{
+		return LookupTable(phase, std::prev(secondTableIt)->second);
+	}
 
-	if (firstTableIt == m_Tables.cend())
+	if (secondTableIt == m_Tables.begin())
+	{
+		return LookupTable(phase, secondTableIt->second);
+	}
+
+	auto firstTableIt = std::prev(secondTableIt);
+
+	if (secondTableIt == m_Tables.cend())
 	{
 		return LookupTable(phase, (*std::prev(firstTableIt)).second);
 	}
 
-	return LookupTable(phase, (*firstTableIt).second);
+	float const morphDelta = secondTableIt->first - firstTableIt->first;
+	float const alpha = (m_Morph - firstTableIt->first) / morphDelta;
 
-	//auto secondTableIt = firstTableIt;
+	return LookupTable(phase, firstTableIt->second) + alpha * (LookupTable(phase, secondTableIt->second) - alpha);
 }
 
 //---------------------------------

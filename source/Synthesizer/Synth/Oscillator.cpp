@@ -56,7 +56,7 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 	m_Pattern = std::unique_ptr<I_WavePattern>(static_cast<I_WavePattern*>(wavePattern));
 
 	// set the current morph of the table to the preferred pattern
-	SetPattern(params.patternType);
+	SetMorph(params.morph);
 }
 
 //---------------------------------
@@ -82,7 +82,17 @@ void Oscillator::SetPattern(E_PatternType const patternType)
 		break;
 	}
 
-	static_cast<WaveTable*>(m_Pattern.get())->SetMorph(morph);
+	SetMorph(morph);
+}
+
+//---------------------------------
+// Oscillator::SetMorph
+//
+// Set the morph value, assuming a wave table
+//
+void Oscillator::SetMorph(float const morphValue)
+{
+	static_cast<WaveTable*>(m_Pattern.get())->SetMorph(morphValue);
 }
 
 //---------------------------------
@@ -106,20 +116,20 @@ float Oscillator::GetSample(double const dt)
 	float signal = m_Pattern->GetSignal(m_Phase); 
 
 	// reduce harmonic aliasing
-	if (m_Parameters.usePolyBlep)
-	{
-		switch (m_Parameters.patternType)
-		{
-		case E_PatternType::Saw:
-			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
-			break;
-		case E_PatternType::Square:
-		//case E_PatternType::Triangle:
-			signal += GetPolyBlep(deltaPhase, m_Phase);
-			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
-			break;
-		}
-	}
+	//if (m_Parameters.usePolyBlep)
+	//{
+	//	switch (m_Parameters.patternType)
+	//	{
+	//	case E_PatternType::Saw:
+	//		signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
+	//		break;
+	//	case E_PatternType::Square:
+	//	//case E_PatternType::Triangle:
+	//		signal += GetPolyBlep(deltaPhase, m_Phase);
+	//		signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
+	//		break;
+	//	}
+	//}
 
 	// we're done
 	return signal;
