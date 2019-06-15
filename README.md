@@ -4,6 +4,8 @@ C++ Synthesizer
 
  * 2 Oscillators with tone variation
  * 4 waveforms - Sine, Triangle, Saw and Square (with variable pulse width)
+ * blending between the waveforms
+ * Wave table implementation
  * ADSR envelope for volume level
  * full polyphony
  * 4 pole filter with envelope adjustable cutoff and resonance
