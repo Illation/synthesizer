@@ -86,32 +86,37 @@ float WaveTable::GetSignal(float const phase) const
 
 	// otherwise blend between two
 
+	// the secund "upper" table is the first table that has a higher morph value than the morph value we are looking for
 	auto secondTableIt = std::find_if(m_Tables.cbegin(), m_Tables.cend(), [this](T_MorphTable const& morphTable)
 	{
 		return morphTable.first >= m_Morph;
 	});
 
+	// if we don't find one, that means we only have a lower table, and we return the lookup result from there
 	if (secondTableIt == m_Tables.cend())
 	{
 		return LookupTable(phase, std::prev(secondTableIt)->second);
 	}
 
+	// if the first table with a higher morph value is the first table overall, we don't have a lower table and just return the result from the first
 	if (secondTableIt == m_Tables.begin())
 	{
 		return LookupTable(phase, secondTableIt->second);
 	}
 
+	// previous table is the lower table because they are sorted
 	auto firstTableIt = std::prev(secondTableIt);
 
-	if (secondTableIt == m_Tables.cend())
-	{
-		return LookupTable(phase, (*std::prev(firstTableIt)).second);
-	}
-
+	// check the alpha for a lerp between both by getting the delta between both morph values and checking how far the set morph is inbetween
 	float const morphDelta = secondTableIt->first - firstTableIt->first;
 	float const alpha = (m_Morph - firstTableIt->first) / morphDelta;
 
-	return LookupTable(phase, firstTableIt->second) + alpha * (LookupTable(phase, secondTableIt->second) - alpha);
+	// get a sample for both tables
+	float const sampleA = LookupTable(phase, firstTableIt->second);
+	float const sampleB = LookupTable(phase, secondTableIt->second);
+
+	// lerp inbetween
+	return sampleA + alpha * (sampleB - sampleA);
 }
 
 //---------------------------------
@@ -133,12 +138,12 @@ float WaveTable::LookupTable(float const phase, T_Table const& table) const
 	size_t upperIdx = lowerIdx + 1;
 
 	// blend values between phases
-	float const alpha = (adjustedPhase - static_cast<float>(lowerIdx) * delta); // / delta;
+	float const alpha = (adjustedPhase - static_cast<float>(lowerIdx) * delta) / delta;
 
 	// adjust upper index by modulo to avoid looking into invalid array elements
 	upperIdx %= table.size();
 
-	return table[lowerIdx] + alpha * (table[upperIdx] - alpha);
+	return table[lowerIdx] + alpha * (table[upperIdx] - table[lowerIdx]);
 }
 
 //---------------------------------

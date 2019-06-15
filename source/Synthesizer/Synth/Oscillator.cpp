@@ -48,10 +48,13 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 	// Create a wave table with all basic patterns
 	WaveTable* wavePattern = new WaveTable();
 
-	wavePattern->AddTableFromBasePattern<SinePattern>(0.f);
-	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.33f);
-	wavePattern->AddTableFromBasePattern<SquarePattern>(0.67f);
-	wavePattern->AddTableFromBasePattern<SawPattern>(1.f);
+	// leave deadzones where a base pattern is stable
+	wavePattern->AddTableFromBasePattern<SinePattern>(0.025f);
+	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.28f);
+	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.38f);
+	wavePattern->AddTableFromBasePattern<SquarePattern>(0.62f);
+	wavePattern->AddTableFromBasePattern<SquarePattern>(0.72f);
+	wavePattern->AddTableFromBasePattern<SawPattern>(0.975f);
 
 	m_Pattern = std::unique_ptr<I_WavePattern>(static_cast<I_WavePattern*>(wavePattern));
 
