@@ -27,7 +27,7 @@ struct OscillatorParameters
 {
 	float level = 1.f;
 	float frequencyMultiplier = 1.f;
-	E_PatternType patternType = E_PatternType::Sine;
+	float morph = 0.f;
 	bool usePolyBlep = true;
 };
 
@@ -43,6 +43,7 @@ public:
 
 	void SetFrequency(float const val) { m_Frequency = static_cast<double>(val); }
 	void SetPattern(E_PatternType const patternType);
+	void SetMorph(float const morphValue);
 
 	float GetSample(double const dt);
 	float GetLevel() const { return m_Parameters.level; }

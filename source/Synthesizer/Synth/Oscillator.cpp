@@ -45,7 +45,21 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 	: m_Frequency(static_cast<double>(frequency))
 	, m_Parameters(params)
 {
-	SetPattern(params.patternType);
+	// Create a wave table with all basic patterns
+	WaveTable* wavePattern = new WaveTable();
+
+	// leave deadzones where a base pattern is stable
+	wavePattern->AddTableFromBasePattern<SinePattern>(0.025f);
+	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.28f);
+	wavePattern->AddTableFromBasePattern<TrianglePattern>(0.38f);
+	wavePattern->AddTableFromBasePattern<SquarePattern>(0.62f);
+	wavePattern->AddTableFromBasePattern<SquarePattern>(0.72f);
+	wavePattern->AddTableFromBasePattern<SawPattern>(0.975f);
+
+	m_Pattern = std::unique_ptr<I_WavePattern>(static_cast<I_WavePattern*>(wavePattern));
+
+	// set the current morph of the table to the preferred pattern
+	SetMorph(params.morph);
 }
 
 //---------------------------------
@@ -56,24 +70,32 @@ Oscillator::Oscillator(float const frequency, OscillatorParameters const& params
 void Oscillator::SetPattern(E_PatternType const patternType)
 {
 	// set the pattern
-	I_WavePattern* wavePattern = nullptr;
+	float morph = 0.f;
+
 	switch (patternType)
 	{
-	case E_PatternType::Sine:
-		wavePattern = new SinePattern();
-		break;
 	case E_PatternType::Saw:
-		wavePattern = new SawPattern();
+		morph = 0.33f;
 		break;
 	case E_PatternType::Square:
-		wavePattern = new SquarePattern();
+		morph = 0.67f;
 		break;
 	case E_PatternType::Triangle:
-		wavePattern = new TrianglePattern();
+		morph = 1.f;
 		break;
 	}
 
-	m_Pattern = std::unique_ptr<I_WavePattern>(wavePattern);
+	SetMorph(morph);
+}
+
+//---------------------------------
+// Oscillator::SetMorph
+//
+// Set the morph value, assuming a wave table
+//
+void Oscillator::SetMorph(float const morphValue)
+{
+	static_cast<WaveTable*>(m_Pattern.get())->SetMorph(morphValue);
 }
 
 //---------------------------------
@@ -97,20 +119,20 @@ float Oscillator::GetSample(double const dt)
 	float signal = m_Pattern->GetSignal(m_Phase); 
 
 	// reduce harmonic aliasing
-	if (m_Parameters.usePolyBlep)
-	{
-		switch (m_Parameters.patternType)
-		{
-		case E_PatternType::Saw:
-			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
-			break;
-		case E_PatternType::Square:
-		//case E_PatternType::Triangle:
-			signal += GetPolyBlep(deltaPhase, m_Phase);
-			signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
-			break;
-		}
-	}
+	//if (m_Parameters.usePolyBlep)
+	//{
+	//	switch (m_Parameters.patternType)
+	//	{
+	//	case E_PatternType::Saw:
+	//		signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
+	//		break;
+	//	case E_PatternType::Square:
+	//	//case E_PatternType::Triangle:
+	//		signal += GetPolyBlep(deltaPhase, m_Phase);
+	//		signal -= GetPolyBlep(deltaPhase, std::fmod(m_Phase + 0.5f, 1.f));
+	//		break;
+	//	}
+	//}
 
 	// we're done
 	return signal;
