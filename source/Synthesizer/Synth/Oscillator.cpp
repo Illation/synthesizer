@@ -113,10 +113,15 @@ float Oscillator::GetSample(double const dt)
 	{
 		m_Phase -= 1.0;
 	}
-	//m_Phase -= std::floor(m_Phase);
+
+	float currentPhase = m_Phase + m_Parameters.phaseOffset;
+	while (currentPhase > 1.f)
+	{
+		currentPhase -= 1.f;
+	}
 
 	// Return the result of our oscillator function
-	float signal = m_Pattern->GetSignal(m_Phase); 
+	float signal = m_Pattern->GetSignal(currentPhase);
 
 	// reduce harmonic aliasing
 	//if (m_Parameters.usePolyBlep)

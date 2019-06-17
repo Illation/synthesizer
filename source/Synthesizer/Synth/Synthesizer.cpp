@@ -116,13 +116,18 @@ void Synthesizer::Initialize()
 	m_SynthParameters.oscBalance = 0.f;
 
 	OscillatorParameters osc;
-	//osc.patternType = E_PatternType::Saw;
+	// regular oscillators
+	m_SynthParameters.oscillators.emplace_back(osc);
 	m_SynthParameters.oscillators.emplace_back(osc);
 
-	//osc.patternType = E_PatternType::Triangle;
-	m_SynthParameters.oscillators.emplace_back(osc);
+	// LFO
+	osc.level = 0.f;
+	osc.frequencyMultiplier = 1.f; // 1hz
+	m_SynthParameters.lfo.oscillator = osc;
+	m_SynthParameters.lfo.modulateOscillators = true;
 
 	SetOscillatorBalance();
+
 
 	// input setup
 	//////////////
@@ -138,6 +143,8 @@ void Synthesizer::Initialize()
 
 		m_Voices.emplace_back(note, Voice(frequency, m_SynthParameters));
 	}
+
+	m_Lfo = std::make_unique<Oscillator>(1.f, m_SynthParameters.lfo.oscillator);
 }
 
 //---------------------------------
@@ -228,6 +235,18 @@ std::vector<float> Synthesizer::GetSample()
 	// how much time passed since the last sample - static value as this is called in intervals instead of steadily
 	double const dt = m_OutputSettings->TimePerSample;
 
+	// oscillate LFO
+	float const lfoSample = (m_Lfo->GetSample(dt) + 1.f) * 0.5f * m_Lfo->GetLevel();
+
+	// modulate oscillators
+	if (m_SynthParameters.lfo.modulateOscillators)
+	{
+		for (OscillatorParameters& osc : m_SynthParameters.oscillators)
+		{
+			osc.phaseOffset = lfoSample;
+		}
+	}
+
 	// Get a sample for every voice
 	float voiceOut = 0.f;
 	for (T_KeyVoicePair& keyVoice : m_Voices)
@@ -296,6 +315,11 @@ void Synthesizer::ChangeControl(E_Control const control, float const value)
 		return (1.f - value) * 5.f;
 	};
 
+	static const auto getLfoFreq = [](float const value) -> float
+	{
+		return 440.f * powf(2.f, (value * 128.f - 75.f) / 12.f);
+	};
+
 	switch (control)
 	{
 	case E_Control::OscTune:
@@ -320,6 +344,13 @@ void Synthesizer::ChangeControl(E_Control const control, float const value)
 		break;
 	case E_Control::EnvAmount:
 		m_SynthParameters.filterEnvelopeAmount = value;
+		break;
+	case E_Control::LFO:
+		m_SynthParameters.lfo.oscillator.frequencyMultiplier = getLfoFreq(value);
+		break;
+
+	case E_Control::RightWheel:
+		m_SynthParameters.lfo.oscillator.level = value;
 		break;
 
 	case E_Control::LevelAttack:

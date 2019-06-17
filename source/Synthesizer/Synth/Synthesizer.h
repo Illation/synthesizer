@@ -53,6 +53,18 @@ enum class E_Control : uint8
 };
 
 //---------------------------------
+// ModulationParameters
+//
+// Used to link oscillators with other oscilators or filters to do FM synth or filter modulation
+//
+struct ModulationParameters
+{
+	OscillatorParameters oscillator;
+	bool modulateOscillators = false;
+	bool modulateFilter = false;
+};
+
+//---------------------------------
 // SynthParameters
 //
 // Parameters that are the same across every voice in the synthesizer
@@ -69,6 +81,8 @@ struct SynthParameters
 	AdsrParameters filterEnvelope;
 	float filterEnvelopeAmount;
 	FilterParams filter;
+
+	ModulationParameters lfo;
 };
 
 //---------------------------------
@@ -140,6 +154,8 @@ private:
 	SynthParameters m_SynthParameters;
 
 	std::vector<T_KeyVoicePair> m_Voices;
+
+	std::unique_ptr<Oscillator> m_Lfo;
 
 	Config::Settings::Output const* m_OutputSettings;
 };

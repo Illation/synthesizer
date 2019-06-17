@@ -27,6 +27,7 @@ struct OscillatorParameters
 {
 	float level = 1.f;
 	float frequencyMultiplier = 1.f;
+	float phaseOffset = 0.f;
 	float morph = 0.f;
 	bool usePolyBlep = true;
 };
