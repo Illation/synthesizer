@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/source/EtMath/CMakeLists.txt
+  CMake does not need to re-run because C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/build/source/EtMath/CMakeFiles/generate.stamp is up-to-date.
+  MathInc.cpp
+  EtMath.vcxproj -> C:\Users\illeahtion\Desktop\PersonalProjects\Sound\synthesizer\build\source\EtMath\Debug\EtMath.lib
