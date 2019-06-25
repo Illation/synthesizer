@@ -17,11 +17,11 @@ build/.vs
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-/.vs
+.vs
 
 CMakeLists.txt.user
 /build/CMakeCache.txt
-/build/CMakeFiles
+build/**/
 CMakeScripts
 Testing
 Makefile

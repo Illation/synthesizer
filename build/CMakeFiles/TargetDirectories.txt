@@ -1,5 +1,0 @@
-C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/CMakeFiles/ZERO_CHECK.dir
-C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/source/EtMath/CMakeFiles/EtMath.dir
-C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/source/EtCore/CMakeFiles/EtCore.dir
-C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/source/EtRendering/CMakeFiles/EtRendering.dir

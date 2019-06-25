@@ -1,8 +1,0 @@
-﻿  Building Custom Rule C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/source/EtRendering/CMakeLists.txt
-  stdafx.cpp
-  RenderState.cpp
-  Shader.cpp
-  Uniform.cpp
-  Viewport.cpp
-  Generating Code...
-  EtRendering.vcxproj -> C:\Users\leah.lindner\Documents\PersonalProjects\synthesizer\lib\Develop_x32\EtRendering\EtRendering.lib
