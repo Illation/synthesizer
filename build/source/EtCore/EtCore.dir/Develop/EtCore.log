@@ -1,5 +1,4 @@
-﻿  Building Custom Rule C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/source/EtCore/CMakeLists.txt
-  stdafx.cpp
+﻿  stdafx.cpp
   Asset.cpp
   ContentManager.cpp
   BinaryReader.cpp
@@ -20,9 +19,9 @@
   serialization.cpp
   DefaultTickTriggerer.cpp
   RealTimeTickTriggerer.cpp
+  TickManager.cpp
   Generating Code...
   Compiling...
-  TickManager.cpp
   Tickable.cpp
   Generating Code...
-  EtCore.vcxproj -> C:\Users\leah.lindner\Documents\PersonalProjects\synthesizer\lib\Develop\EtCore.lib
+  EtCore.vcxproj -> C:\Users\leah.lindner\Documents\PersonalProjects\synthesizer\lib\Develop_x32\EtCore\EtCore.lib

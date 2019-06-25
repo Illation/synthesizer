@@ -1,7 +1,12 @@
+
+
+##############################
 # general for cmake list files
 ##############################
 
+
 # output dir for executables
+############################
 function(outputDirectories TARGET)
 
 	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
@@ -22,7 +27,9 @@ function(outputDirectories TARGET)
 
 endfunction(outputDirectories)
 
+
 # output dir for libraries
+############################
 function(libOutputDirectories TARGET)
 
 	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
@@ -50,3 +57,51 @@ function(libOutputDirectories TARGET)
 	endif()
 
 endfunction(libOutputDirectories)
+
+
+# make project filters mimic directory structure
+################################################
+function(assign_source_group)
+    foreach(_source IN ITEMS ${ARGN})
+        if (IS_ABSOLUTE "${_source}")
+            file(RELATIVE_PATH _source_rel "${CMAKE_CURRENT_SOURCE_DIR}" "${_source}")
+        else()
+            set(_source_rel "${_source}")
+        endif()
+        get_filename_component(_source_path "${_source_rel}" PATH)
+        string(REPLACE "/" "\\" _source_path_msvc "${_source_path}")
+        source_group("${_source_path_msvc}" FILES "${_source}")
+    endforeach()
+endfunction(assign_source_group)
+
+
+# PCH
+#########
+function(precompiled_headers SOURCELIST)
+	# only windows
+	if (MSVC)
+		# run this first to set all files to use pch
+		foreach( src_file ${SOURCELIST} )
+			set_source_files_properties( ${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h" )
+		endforeach( src_file ${SOURCELIST} )
+		# run this second to overwrite the pch setting for the stdafx.cpp file
+		set_source_files_properties(stdafx.cpp PROPERTIES COMPILE_FLAGS "/Ycstdafx.h" )
+	endif(MSVC)
+endfunction(precompiled_headers)
+
+
+# Config defines
+#################
+function(target_definitions)
+	# os
+	if (MSVC)
+		add_definitions(-DPLATFORM_Win)
+	endif(MSVC)
+	
+	# architecture
+	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+		add_definitions(-DPLATFORM_x64)
+	 else() 
+		add_definitions(-DPLATFORM_x32)
+	endif()
+endfunction(target_definitions)

@@ -17,3 +17,16 @@ build/.vs
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+/.vs
+
+CMakeLists.txt.user
+/build/CMakeCache.txt
+/build/CMakeFiles
+CMakeScripts
+Testing
+Makefile
+/build/cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
