@@ -1,7 +1,5 @@
 # files in this library
-file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.inl)
-file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.inl ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 
 file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
@@ -31,7 +29,10 @@ if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 endif()
 
 # library and dependancies
-add_library(EtCore ${sources})
+add_library(EtCore ${sources} ${headers})
+
+libOutputDirectories(EtCore)
+
 target_link_libraries (EtCore EtMath)
 
 # library includes

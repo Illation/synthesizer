@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/source
+# Install script for directory: C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/source
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,8 +34,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/source/EtMath/cmake_install.cmake")
-  include("C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/build/source/EtCore/cmake_install.cmake")
+  include("C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/build/source/EtMath/cmake_install.cmake")
+  include("C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/build/source/EtCore/cmake_install.cmake")
 
 endif()
 

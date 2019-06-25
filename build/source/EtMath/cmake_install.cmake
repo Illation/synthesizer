@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/leah.lindner/Documents/PersonalProjects/synthesizer/source/EtMath
+# Install script for directory: C:/Users/illeahtion/Desktop/PersonalProjects/Sound/synthesizer/source/EtMath
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
