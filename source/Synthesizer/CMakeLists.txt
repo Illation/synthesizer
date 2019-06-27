@@ -20,6 +20,12 @@ list (APPEND projectFiles ${c_sources})
 precompiled_headers(${sources})
 target_definitions()
 
+# rt audio and rt midi defines
+if (MSVC)
+	add_definitions(-D__WINDOWS_DS__ -D__WINDOWS_ASIO__ -D__WINDOWS_WASAPI__)
+	add_definitions(-D__WINDOWS_MM__)
+endif(MSVC)
+
 add_definitions(-D_CONSOLE)
 
 # executable and dependancies
@@ -28,6 +34,8 @@ add_executable(Synthesizer ${sources} ${c_sources} ${headers})
 # directory stuff
 assign_source_group(${projectFiles})
 outputDirectories(Synthesizer)
+
+add_dependencies(Synthesizer generate-resources)
 
 # linking
 target_link_libraries (Synthesizer EtMath EtCore EtRendering Vendor)

@@ -119,6 +119,8 @@ function(dependancyLinks TARGET)
 		set(dep_pf "${dep_dir}/x32")
 	endif()
 
+	message(STATUS "library directory: ${dep_pf}")
+
 	set(gtk_dbg "${dep_pf}/gtkmm/Debug/")
 	set(gtk_rel "${dep_pf}/gtkmm/Release/")
 
@@ -140,34 +142,34 @@ function(dependancyLinks TARGET)
 		debug ${gtk_dbg}zlibd.lib				optimized ${gtk_rel}zlib.lib	
 
 		debug ${gtk_dbg}atk-1.0.lib				optimized ${gtk_rel}atk-1.0.lib	 
-		debug ${gtk_dbg}aatkmm.lib				optimized ${gtk_rel}aatkmm.lib	 
-		debug ${gtk_dbg}acairomm-1.0.lib		optimized ${gtk_rel}acairomm-1.0.lib	 
-		debug ${gtk_dbg}aepoxy.lib				optimized ${gtk_rel}aepoxy.lib	 
-		debug ${gtk_dbg}aexpat.lib				optimized ${gtk_rel}aexpat.lib	 
-		debug ${gtk_dbg}afontconfig.lib			optimized ${gtk_rel}afontconfig.lib	 
-		debug ${gtk_dbg}agailutil-3.0.lib		optimized ${gtk_rel}agailutil-3.0.lib	 
-		debug ${gtk_dbg}agdk_pixbuf-2.0.lib		optimized ${gtk_rel}agdk_pixbuf-2.0.lib	 
-		debug ${gtk_dbg}agdk-3.0.lib			optimized ${gtk_rel}agdk-3.0.lib	 
-		debug ${gtk_dbg}agdkmm.lib				optimized ${gtk_rel}agdkmm.lib	 
-		debug ${gtk_dbg}agio-2.0.lib			optimized ${gtk_rel}agio-2.0.lib	 
-		debug ${gtk_dbg}agiomm.lib				optimized ${gtk_rel}agiomm.lib	 
-		debug ${gtk_dbg}aglib-2.0.lib			optimized ${gtk_rel}aglib-2.0.lib	 
-		debug ${gtk_dbg}aglibmm.lib				optimized ${gtk_rel}aglibmm.lib	 
-		debug ${gtk_dbg}agmodule-2.0.lib		optimized ${gtk_rel}agmodule-2.0.lib	 
-		debug ${gtk_dbg}agobject-2.0.lib		optimized ${gtk_rel}agobject-2.0.lib	 
-		debug ${gtk_dbg}agthread-2.0.lib		optimized ${gtk_rel}agthread-2.0.lib	 
-		debug ${gtk_dbg}agtk-3.0.lib			optimized ${gtk_rel}agtk-3.0.lib	 
-		debug ${gtk_dbg}agtkmm.lib				optimized ${gtk_rel}agtkmm.lib	 
-		debug ${gtk_dbg}aharfbuzz.lib			optimized ${gtk_rel}aharfbuzz.lib	 
-		debug ${gtk_dbg}alibcharset.lib			optimized ${gtk_rel}alibcharset.lib	 
-		debug ${gtk_dbg}alibffi.lib				optimized ${gtk_rel}alibffi.lib	 
-		debug ${gtk_dbg}alibiconv.lib			optimized ${gtk_rel}alibiconv.lib	 
-		debug ${gtk_dbg}alibintl.lib			optimized ${gtk_rel}alibintl.lib	 
-		debug ${gtk_dbg}apango-1.0.lib			optimized ${gtk_rel}apango-1.0.lib	 
-		debug ${gtk_dbg}apangocairo-1.0.lib		optimized ${gtk_rel}apangocairo-1.0.lib	 
-		debug ${gtk_dbg}apangoft2-1.0.lib		optimized ${gtk_rel}apangoft2-1.0.lib	 
-		debug ${gtk_dbg}apangomm.lib			optimized ${gtk_rel}apangomm.lib	 
-		debug ${gtk_dbg}apangowin32-1.0.lib		optimized ${gtk_rel}apangowin32-1.0.lib	 
-		debug ${gtk_dbg}asigc-2.0.lib			optimized ${gtk_rel}asigc-2.0.lib	 )
+		debug ${gtk_dbg}atkmm.lib				optimized ${gtk_rel}atkmm.lib	 
+		debug ${gtk_dbg}cairomm-1.0.lib			optimized ${gtk_rel}cairomm-1.0.lib	 
+		debug ${gtk_dbg}epoxy.lib				optimized ${gtk_rel}epoxy.lib	 
+		debug ${gtk_dbg}expat.lib				optimized ${gtk_rel}expat.lib	 
+		debug ${gtk_dbg}fontconfig.lib			optimized ${gtk_rel}fontconfig.lib	 
+		debug ${gtk_dbg}gailutil-3.0.lib		optimized ${gtk_rel}gailutil-3.0.lib	 
+		debug ${gtk_dbg}gdk_pixbuf-2.0.lib		optimized ${gtk_rel}gdk_pixbuf-2.0.lib	 
+		debug ${gtk_dbg}gdk-3.0.lib				optimized ${gtk_rel}gdk-3.0.lib	 
+		debug ${gtk_dbg}gdkmm.lib				optimized ${gtk_rel}gdkmm.lib	 
+		debug ${gtk_dbg}gio-2.0.lib				optimized ${gtk_rel}gio-2.0.lib	 
+		debug ${gtk_dbg}giomm.lib				optimized ${gtk_rel}giomm.lib	 
+		debug ${gtk_dbg}glib-2.0.lib			optimized ${gtk_rel}glib-2.0.lib	 
+		debug ${gtk_dbg}glibmm.lib				optimized ${gtk_rel}glibmm.lib	 
+		debug ${gtk_dbg}gmodule-2.0.lib			optimized ${gtk_rel}gmodule-2.0.lib	 
+		debug ${gtk_dbg}gobject-2.0.lib			optimized ${gtk_rel}gobject-2.0.lib	 
+		debug ${gtk_dbg}gthread-2.0.lib			optimized ${gtk_rel}gthread-2.0.lib	 
+		debug ${gtk_dbg}gtk-3.0.lib				optimized ${gtk_rel}gtk-3.0.lib	 
+		debug ${gtk_dbg}gtkmm.lib				optimized ${gtk_rel}gtkmm.lib	 
+		debug ${gtk_dbg}harfbuzz.lib			optimized ${gtk_rel}harfbuzz.lib	 
+		debug ${gtk_dbg}libcharset.lib			optimized ${gtk_rel}libcharset.lib	 
+		debug ${gtk_dbg}libffi.lib				optimized ${gtk_rel}libffi.lib	 
+		debug ${gtk_dbg}libiconv.lib			optimized ${gtk_rel}libiconv.lib	 
+		debug ${gtk_dbg}libintl.lib				optimized ${gtk_rel}libintl.lib	 
+		debug ${gtk_dbg}pango-1.0.lib			optimized ${gtk_rel}pango-1.0.lib	 
+		debug ${gtk_dbg}pangocairo-1.0.lib		optimized ${gtk_rel}pangocairo-1.0.lib	 
+		debug ${gtk_dbg}pangoft2-1.0.lib		optimized ${gtk_rel}pangoft2-1.0.lib	 
+		debug ${gtk_dbg}pangomm.lib				optimized ${gtk_rel}pangomm.lib	 
+		debug ${gtk_dbg}pangowin32-1.0.lib		optimized ${gtk_rel}pangowin32-1.0.lib	 
+		debug ${gtk_dbg}sigc-2.0.lib			optimized ${gtk_rel}sigc-2.0.lib	 )
 
 endfunction(dependancyLinks)

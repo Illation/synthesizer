@@ -54,7 +54,8 @@ add_library(General ${generalFiles})
 set_target_properties(General PROPERTIES LINKER_LANGUAGE NONE) # we don't build this library
 assign_source_group(${generalFiles})
 
-# all other libraries are under source
-#####################################
+# all other targets are under source and resources
+##################################################
 
+add_subdirectory (resources)
 add_subdirectory (source)
