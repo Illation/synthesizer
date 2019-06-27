@@ -48,3 +48,5 @@ include_directories("../../dependancies/include/gtkmm/")
 # general include dirs
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_include_directories (Synthesizer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+installResources()

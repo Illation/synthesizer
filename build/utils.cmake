@@ -12,16 +12,16 @@ function(outputDirectories TARGET)
 	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 		# 64 bit
 
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/../bin/Debug_x64/${TARGET})
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEVELOP ${PROJECT_BINARY_DIR}/../bin/Develop_x64/${TARGET})
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_SHIPPING ${PROJECT_BINARY_DIR}/../bin/Shipping_x64/${TARGET})
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/../bin/Debug_x64/bin)
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEVELOP ${PROJECT_BINARY_DIR}/../bin/Develop_x64/bin)
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_SHIPPING ${PROJECT_BINARY_DIR}/../bin/Shipping_x64/bin)
 
 	else() 
 		# 32 bit
 
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/../bin/Debug_x32/${TARGET})
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEVELOP ${PROJECT_BINARY_DIR}/../bin/Develop_x32/${TARGET})
-		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_SHIPPING ${PROJECT_BINARY_DIR}/../bin/Shipping_x32/${TARGET})
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/../bin/Debug_x32/bin)
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEVELOP ${PROJECT_BINARY_DIR}/../bin/Develop_x32/bin)
+		set_target_properties(${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_SHIPPING ${PROJECT_BINARY_DIR}/../bin/Shipping_x32/bin)
 
 	endif()
 
@@ -128,7 +128,7 @@ function(dependancyLinks TARGET)
 	target_link_libraries (${TARGET} 		
 		debug ${dep_pf}/rttr/Debug/rttr_core_d.lib		optimized ${dep_pf}/rttr/Release/rttr_core.lib # RTTR
 
-		debug ${gtk_dbg}bz2d.lib				optimized ${gtk_rel}bbz2.lib			# GTK
+		debug ${gtk_dbg}bz2d.lib				optimized ${gtk_rel}bz2.lib			# GTK
 		debug ${gtk_dbg}cairod.lib				optimized ${gtk_rel}cairo.lib	
 		debug ${gtk_dbg}cairo-gobjectd.lib		optimized ${gtk_rel}cairo-gobject.lib	
 		debug ${gtk_dbg}freetyped.lib			optimized ${gtk_rel}freetype.lib	
@@ -173,3 +173,57 @@ function(dependancyLinks TARGET)
 		debug ${gtk_dbg}sigc-2.0.lib			optimized ${gtk_rel}sigc-2.0.lib	 )
 
 endfunction(dependancyLinks)
+
+
+# install everything in the appropriate directory according to configuration
+###########################
+function(installResources)
+
+	set(baseBinDir "${PROJECT_BINARY_DIR}/../bin")
+	set(packagedResDir "${PROJECT_BINARY_DIR}/../resources/packaged")
+
+	# paths for our libraries depend on the architecture we compile fo
+	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+		set(platform "_x64")
+		set(rttrDir "${PROJECT_BINARY_DIR}/../dependancies/x64/rttr")
+		set(gtkDir "${PROJECT_BINARY_DIR}/../dependancies/x64/gtkmm")
+	 else() 
+		set(platform "_x32")
+		set(rttrDir "${PROJECT_BINARY_DIR}/../dependancies/x32/rttr")
+		set(gtkDir "${PROJECT_BINARY_DIR}/../dependancies/x32/gtkmm")
+	endif()
+
+	foreach(configType ${CMAKE_CONFIGURATION_TYPES})
+
+		# where the lib files live
+		set(libcfg "Release") 
+		if("${configType}" EQUAL "Debug" )
+			set(libcfg "Debug")
+		endif()
+
+		# files we copy to bin	
+		set(binext PATTERN \"*.dll\")
+		if("${configType}" EQUAL "Debug" )
+			set(binext ${dllext} PATTERN \"*.pdb\") # in debug we also copy pdbs
+		endif()
+
+		# copy dlls and pdbs for all libraries
+		install(DIRECTORY ${rttrDir}/${libcfg}/
+			CONFIGURATIONS ${configType}
+			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
+			FILES_MATCHING ${binext})
+
+		install(DIRECTORY ${gtkDir}/${libcfg}/
+			CONFIGURATIONS ${configType}
+			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
+			FILES_MATCHING ${binext})
+
+		# copy packaged resources
+		install(DIRECTORY ${packagedResDir}/
+			CONFIGURATIONS ${configType}
+			DESTINATION ${baseBinDir}/${configType}${platform}/ )
+
+
+	endforeach()
+
+endfunction(installResources)
