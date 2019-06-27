@@ -197,26 +197,26 @@ function(installResources)
 
 		# where the lib files live
 		set(libcfg "Release") 
-		if("${configType}" EQUAL "Debug" )
+		if("${configType}" STREQUAL "Debug" )
 			set(libcfg "Debug")
 		endif()
 
 		# files we copy to bin	
-		set(binext PATTERN \"*.dll\")
-		if("${configType}" EQUAL "Debug" )
-			set(binext ${dllext} PATTERN \"*.pdb\") # in debug we also copy pdbs
+		set(binext "PATTERN \"*.dll\"")
+		if("${configType}" STREQUAL "Debug" )
+			set(binext "${binext} PATTERN \"*.pdb\"") # in debug we also copy pdbs
 		endif()
 
 		# copy dlls and pdbs for all libraries
 		install(DIRECTORY ${rttrDir}/${libcfg}/
 			CONFIGURATIONS ${configType}
 			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
-			FILES_MATCHING ${binext})
+			FILES_MATCHING ${${binext}})
 
 		install(DIRECTORY ${gtkDir}/${libcfg}/
 			CONFIGURATIONS ${configType}
 			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
-			FILES_MATCHING ${binext})
+			FILES_MATCHING ${${binext}})
 
 		# copy packaged resources
 		install(DIRECTORY ${packagedResDir}/
