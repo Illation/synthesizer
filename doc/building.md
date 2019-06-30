@@ -7,8 +7,9 @@ Currently the project is being developed with Visual Studio 2017, but it is done
 
 The project comes with packaged lib, dll and include files for all dependancies, compiled with vs2017. If you want to build with a different visual studio version, you need to build GTKmm and its dependancies for that compiler.
 
-In order to build the project, you need to generate the project files with CMake. You should have CMake 3.10 or later installed on your computer
-Next, open a terminal and navigate to the repository root folder, and execute:
+In order to build the project, you need to generate the project files with CMake. You should have CMake 3.10 or later installed on your computer.
+
+Start by opening a terminal and navigating to the repository root folder, then execute:
 
     cmake -G "Visual Studio 15 2017 Win64" -H. -Bbuild
 
