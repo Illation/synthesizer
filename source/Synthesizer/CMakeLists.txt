@@ -20,12 +20,6 @@ list (APPEND projectFiles ${c_sources})
 precompiled_headers(${sources})
 target_definitions()
 
-# rt audio and rt midi defines
-if (MSVC)
-	add_definitions(-D__WINDOWS_DS__ -D__WINDOWS_ASIO__ -D__WINDOWS_WASAPI__)
-	add_definitions(-D__WINDOWS_MM__)
-endif(MSVC)
-
 add_definitions(-D_CONSOLE)
 
 # executable and dependancies
@@ -40,6 +34,10 @@ add_dependencies(Synthesizer generate-resources)
 # linking
 target_link_libraries (Synthesizer EtMath EtCore EtRendering Vendor)
 dependancyLinks(Synthesizer)
+
+if (MSVC)
+	target_link_libraries (Synthesizer winmm.lib dsound.lib)
+endif(MSVC)
 
 # library includes
 include_directories("../../dependancies/include/rttr/")

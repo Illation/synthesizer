@@ -1,3 +1,3 @@
 #pragma once
 
-std::string execConsoleCommand(std::string cmd);
+std::string execConsoleCommand(std::string const& cmd);

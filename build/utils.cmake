@@ -179,18 +179,31 @@ endfunction(dependancyLinks)
 ###########################
 function(installResources)
 
-	set(baseBinDir "${PROJECT_BINARY_DIR}/../bin")
-	set(packagedResDir "${PROJECT_BINARY_DIR}/../resources/packaged")
+	set(projectBase "${PROJECT_BINARY_DIR}/..")
+	set(baseBinDir "${projectBase}/bin")
+	set(packagedResDir "${projectBase}/resources/packaged")
+	set(configDir "${projectBase}/resources/config")
+
+	# user directory where user data and configuration
+	set(userDir "${projectBase}/user_data")
+
+	# create a file within the packaged resources that points to the user directory
+	get_filename_component(absUserDir ${userDir} ABSOLUTE)
+	file(WRITE ${packagedResDir}/config/userDirPointer.json
+		"{\"dir pointer\":{\"user dir path\":\"${absUserDir}/\"}}" )
+
+	# copy config files
+	install(DIRECTORY ${configDir}/ DESTINATION ${userDir}/)
 
 	# paths for our libraries depend on the architecture we compile fo
 	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 		set(platform "_x64")
-		set(rttrDir "${PROJECT_BINARY_DIR}/../dependancies/x64/rttr")
-		set(gtkDir "${PROJECT_BINARY_DIR}/../dependancies/x64/gtkmm")
+		set(rttrDir "${projectBase}/dependancies/x64/rttr")
+		set(gtkDir "${projectBase}/dependancies/x64/gtkmm")
 	 else() 
 		set(platform "_x32")
-		set(rttrDir "${PROJECT_BINARY_DIR}/../dependancies/x32/rttr")
-		set(gtkDir "${PROJECT_BINARY_DIR}/../dependancies/x32/gtkmm")
+		set(rttrDir "${projectBase}/dependancies/x32/rttr")
+		set(gtkDir "${projectBase}/dependancies/x32/gtkmm")
 	endif()
 
 	foreach(configType ${CMAKE_CONFIGURATION_TYPES})
@@ -201,28 +214,34 @@ function(installResources)
 			set(libcfg "Debug")
 		endif()
 
-		# files we copy to bin	
-		set(binext "PATTERN \"*.dll\"")
-		if("${configType}" STREQUAL "Debug" )
-			set(binext "${binext} PATTERN \"*.pdb\"") # in debug we also copy pdbs
-		endif()
-
-		# copy dlls and pdbs for all libraries
+		# copy dlls for all libraries
 		install(DIRECTORY ${rttrDir}/${libcfg}/
 			CONFIGURATIONS ${configType}
 			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
-			FILES_MATCHING ${${binext}})
+			FILES_MATCHING PATTERN "*.dll")
 
 		install(DIRECTORY ${gtkDir}/${libcfg}/
 			CONFIGURATIONS ${configType}
 			DESTINATION ${baseBinDir}/${configType}${platform}/bin/
-			FILES_MATCHING ${${binext}})
+			FILES_MATCHING PATTERN "*.dll")
+
+		# for debug applications we also copy pdbs
+		if("${configType}" STREQUAL "Debug" )
+			install(DIRECTORY ${rttrDir}/${libcfg}/
+				CONFIGURATIONS ${configType}
+				DESTINATION ${baseBinDir}/${configType}${platform}/bin/
+				FILES_MATCHING PATTERN "*.pdb")
+
+			install(DIRECTORY ${gtkDir}/${libcfg}/
+				CONFIGURATIONS ${configType}
+				DESTINATION ${baseBinDir}/${configType}${platform}/bin/
+				FILES_MATCHING PATTERN "*.pdb")
+		endif()
 
 		# copy packaged resources
 		install(DIRECTORY ${packagedResDir}/
 			CONFIGURATIONS ${configType}
 			DESTINATION ${baseBinDir}/${configType}${platform}/ )
-
 
 	endforeach()
 

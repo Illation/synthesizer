@@ -7,14 +7,36 @@
 #include <glibmm/miscutils.h>
 
 #include <UI/_generated/resources.c>
+#include <EtCore/FileSystem/FileUtil.h>
+#include <iostream>
 
 
+// forward
 void SetDebuggingOptions();
 
+ 
+//---------------------------------
+// main
+//
+// Entry point for the program
+//
 int main(int argc, char *argv[])
 {
+	// Memory leak checks
 	SetDebuggingOptions();
 
+	// working dir
+	if (argc > 0)
+	{
+		FileUtil::SetExecutablePath(argv[0]);
+	}
+	else
+	{
+		std::cerr << "main > Couldn't get extract working directory from arguments, exiting!" << std::endl;
+		return 1;
+	}
+
+	// compiled resources
 	synthesizer_register_resource();
 
 	// Since this example is running uninstalled, we have to help it find its
@@ -29,11 +51,17 @@ int main(int argc, char *argv[])
 	// run() will return when the last window has been closed.
 	int32 result = synthApp->run(argc, argv);
 
+	// compiled resources
 	synthesizer_unregister_resource();
 
 	return result;
 }
 
+//---------------------------------
+// SetDebuggingOptions
+//
+// Memory checks in debug mode
+//
 void SetDebuggingOptions()
 {
 	//notify user if heap is corrupt
