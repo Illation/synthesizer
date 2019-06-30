@@ -16,9 +16,11 @@ C++ Synthesizer
 
 For visual studio 2017:
 
-    ./dependancies/tools/genie/genie.exe --file=build/genie.lua vs2017
+    cmake -G "Visual Studio 15 2017 Win64" -H. -Bbuild
 
-Then build the solution that appears in build/synthesizer.sln
+Next build the solution that appears in build/synthesizer.sln
+
+Finally, build the "INSTALL" project in said solution.
 
 In all other cases check [the build documentation](doc/building.md).
 
@@ -41,7 +43,3 @@ Sweet is licensed under [GNU General Public License v3.0](https://github.com/Eli
 ### RTTR
 
 RTTR is licensed with the [MIT license](https://github.com/rttrorg/rttr/blob/master/LICENSE.txt)
-
-### Genie
-
-Genie is licensed [here](https://github.com/bkaradzic/GENie/blob/master/LICENSE)

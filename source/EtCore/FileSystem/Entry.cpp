@@ -4,9 +4,10 @@
 
 #include <iostream>
 
-#include "./Facade/FileBase.h"
-#include "./Facade/FileAccessMode.h"
-#include "./Facade/FileAccessFlags.h"
+#include <EtCore/FileSystem/Facade/FileBase.h>
+#include <EtCore/FileSystem/Facade/FileAccessMode.h>
+#include <EtCore/FileSystem/Facade/FileAccessFlags.h>
+#include "FileUtil.h"
 
 Entry::Entry(std::string name, Directory* pParent)
 	:m_Filename(name)
@@ -15,8 +16,22 @@ Entry::Entry(std::string name, Directory* pParent)
 }
 std::string Entry::GetPath()
 {
-	if(m_pParent)return std::string(m_pParent->GetPath()+m_pParent->GetName());
-	else return "./";
+	if (m_pParent)
+	{
+		return std::string(m_pParent->GetPath() + m_pParent->GetName());
+	}
+	else 
+	{
+		// prefix 'this' directory for relative paths
+		if (FileUtil::IsAbsolutePath(m_Filename))
+		{
+			return "";
+		}
+		else
+		{
+			return "./";
+		}
+	}
 }
 std::string Entry::GetExtension()
 {
@@ -41,7 +56,7 @@ File::~File()
 }
 bool File::Open(FILE_ACCESS_MODE mode, FILE_ACCESS_FLAGS flags)
 {
-	std::string path = GetPath()+m_Filename;
+	std::string const path = FileUtil::GetAbsolutePath(GetPath()+m_Filename);
 	m_Handle = FILE_BASE::Open( path.c_str(), flags, mode);
 	if (m_Handle == FILE_HANDLE_INVALID) 
 	{
